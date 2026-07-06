@@ -69,8 +69,8 @@ src/
     PinGate.jsx           — вход по PIN-коду
     ScaleSlider.jsx        — шкалы 0–5 / 0–10
     MultiSelect.jsx       — множественный выбор (эмоции, тело, что помогло)
-    Stats.jsx             — график динамики (recharts)
-  data/options.js         — списки эмоций/ощущений/вариантов (легко редактировать)
+    Stats.jsx             — графики динамики, включая покраснение лица (recharts)
+  data/options.js         — списки эмоций/симптомов/вариантов (легко редактировать)
   lib/supabase.js         — подключение к Supabase
   utils/storage.js        — чтение/запись Supabase + экспорт в JSON
 ```

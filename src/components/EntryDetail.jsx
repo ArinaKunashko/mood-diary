@@ -47,6 +47,7 @@ export default function EntryDetail({ entry, onEdit, onClose }) {
       <Row label="Плач" value={entry.crying} />
       <Row label="Сон" value={entry.dreamQuality} />
       <Row label="Что снилось" value={entry.dreamContent} />
+      <Row label="Краснело ли лицо" value={entry.faceRedness} />
       <TagRow label="Тело" items={entry.body} />
       <Row label="Другие ощущения" value={entry.bodyOther} />
       <Row label="Мысли" value={entry.thoughts} />

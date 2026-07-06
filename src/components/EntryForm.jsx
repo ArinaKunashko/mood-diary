@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import ScaleSlider from './ScaleSlider.jsx'
 import MultiSelect from './MultiSelect.jsx'
-import { EMOTIONS, BODY_SIGNALS, HELPED_OPTIONS, CRYING_OPTIONS, DREAM_OPTIONS, SCALE_LABELS } from '../data/options.js'
+import {
+  BODY_SIGNALS,
+  CRYING_OPTIONS,
+  DREAM_OPTIONS,
+  EMOTIONS,
+  FACE_REDNESS_OPTIONS,
+  HELPED_OPTIONS,
+  SCALE_LABELS
+} from '../data/options.js'
 
 function toggleInArray(arr, value) {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
@@ -106,6 +114,9 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
 
       <section className="form-section">
         <h3>Сон</h3>
+        <p className="section-hint">
+          Отмечай именно ощущение сна: страшный сюжет может быть не тревожным, если во сне был азарт или игра.
+        </p>
         <div className="pill-row">
           {DREAM_OPTIONS.map((opt) => (
             <button
@@ -122,14 +133,31 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
         <textarea
           className="text-area other-input"
           rows={2}
-          placeholder="Если помнишь что-то важное из сна — опиши коротко…"
+          placeholder="Сюжет или ощущение сна: призраки, погоня, азарт, игра, страх..."
           value={entry.dreamContent}
           onChange={(e) => update({ dreamContent: e.target.value })}
         />
       </section>
 
       <section className="form-section">
-        <h3>9. Что происходит в теле?</h3>
+        <h3>9. Краснело ли лицо?</h3>
+        <div className="pill-row">
+          {FACE_REDNESS_OPTIONS.map((opt) => (
+            <button
+              type="button"
+              key={opt}
+              className={`pill ${entry.faceRedness === opt ? 'is-active' : ''}`}
+              onClick={() => update({ faceRedness: entry.faceRedness === opt ? '' : opt })}
+              aria-pressed={entry.faceRedness === opt}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="form-section">
+        <h3>10. Что происходит в теле?</h3>
         <MultiSelect
           label="Можно отметить несколько"
           options={BODY_SIGNALS}
@@ -141,7 +169,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>10. Какие мысли сейчас чаще всего приходят?</h3>
+        <h3>11. Какие мысли сейчас чаще всего приходят?</h3>
         <textarea
           className="text-area"
           rows={3}
@@ -151,7 +179,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>11. Что сегодня происходило?</h3>
+        <h3>12. Что сегодня происходило?</h3>
         <p className="section-hint">события, которые могли повлиять на состояние</p>
         <textarea
           className="text-area"
@@ -162,7 +190,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>12. Что помогло?</h3>
+        <h3>13. Что помогло?</h3>
         <MultiSelect
           label="Можно отметить несколько"
           options={HELPED_OPTIONS}
@@ -175,7 +203,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
 
       <section className="form-section">
         <ScaleSlider
-          label="13. Насколько тяжело мне сейчас проживать это состояние"
+          label="14. Насколько тяжело мне сейчас проживать это состояние"
           value={entry.hardship}
           onChange={(v) => update({ hardship: v })}
           max={10}
@@ -183,7 +211,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>14. Одним предложением</h3>
+        <h3>15. Одним предложением</h3>
         <input
           type="text"
           className="text-input"
