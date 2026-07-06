@@ -175,6 +175,10 @@ button {
 }
 
 .form-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
   margin-bottom: 8px;
 }
 
@@ -596,10 +600,15 @@ button {
 }
 
 .chart-tooltip-date {
-  margin-bottom: 8px;
   font-family: var(--font-display);
   font-size: 0.95rem;
   color: var(--color-text);
+}
+
+.chart-tooltip-cycle {
+  margin: 2px 0 8px;
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
 }
 
 .chart-tooltip-row {
@@ -658,6 +667,28 @@ button {
   gap: 6px;
   color: var(--color-text-soft);
   font-size: 0.78rem;
+}
+
+.symptom-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18px, 1fr));
+  gap: 4px;
+  margin-top: 16px;
+}
+
+.symptom-cell {
+  position: relative;
+  min-width: 18px;
+  height: 30px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  cursor: default;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.symptom-cell:hover {
+  border-color: var(--color-text-soft);
+  transform: translateY(-1px);
 }
 
 .crying-strip {

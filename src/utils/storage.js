@@ -113,6 +113,7 @@ export function makeEmptyEntry() {
   return {
     id: crypto.randomUUID(),
     date: new Date().toISOString().slice(0, 10),
+    cycleDay: '',
     emotions: [],
     emotionOther: '',
     intensity: null,

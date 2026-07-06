@@ -37,10 +37,18 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
             required
           />
         </label>
+        <label className="date-field">
+          День цикла
+          <input
+            inputMode="numeric"
+            value={entry.cycleDay ?? ''}
+            onChange={(e) => update({ cycleDay: e.target.value })}
+          />
+        </label>
       </div>
 
       <section className="form-section">
-        <h3>1. Какие эмоции я сейчас испытываю?</h3>
+        <h3> Какие эмоции я сейчас испытываю?</h3>
         <MultiSelect
           label="Можно отметить несколько"
           options={EMOTIONS}
@@ -54,13 +62,13 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       <section className="form-section">
         <h3>Насколько сильны переживания?</h3>
         <ScaleSlider
-          label="2. Сила эмоций"
+          label="Сила эмоций"
           value={entry.intensity}
           onChange={(v) => update({ intensity: v })}
           labels={SCALE_LABELS.intensity}
         />
         <ScaleSlider
-          label="3. Сила тревоги"
+          label="Сила тревоги"
           value={entry.anxiety}
           onChange={(v) => update({ anxiety: v })}
           labels={SCALE_LABELS.anxiety}
@@ -70,25 +78,25 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       <section className="form-section">
         <h3>Ресурс</h3>
         <ScaleSlider
-          label="4. Уровень энергии"
+          label="Уровень энергии"
           value={entry.energy}
           onChange={(v) => update({ energy: v })}
           labels={SCALE_LABELS.energy}
         />
         <ScaleSlider
-          label="5. Работоспособность"
+          label="Работоспособность"
           value={entry.productivity}
           onChange={(v) => update({ productivity: v })}
           labels={SCALE_LABELS.productivity}
         />
         <ScaleSlider
-          label="6. Желание общаться"
+          label="Желание общаться"
           value={entry.social}
           onChange={(v) => update({ social: v })}
           labels={SCALE_LABELS.social}
         />
         <ScaleSlider
-          label="7. Желание активности"
+          label="Желание активности"
           value={entry.activity}
           onChange={(v) => update({ activity: v })}
           labels={SCALE_LABELS.activity}
@@ -96,7 +104,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>8. Плач</h3>
+        <h3>Плач</h3>
         <div className="pill-row">
           {CRYING_OPTIONS.map((opt) => (
             <button
@@ -140,7 +148,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>9. Краснело ли лицо?</h3>
+        <h3>Краснело ли лицо?</h3>
         <div className="pill-row">
           {FACE_REDNESS_OPTIONS.map((opt) => (
             <button
@@ -157,7 +165,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>10. Что происходит в теле?</h3>
+        <h3>Что происходит в теле?</h3>
         <MultiSelect
           label="Можно отметить несколько"
           options={BODY_SIGNALS}
@@ -169,7 +177,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>11. Какие мысли сейчас чаще всего приходят?</h3>
+        <h3>Какие мысли сейчас чаще всего приходят?</h3>
         <textarea
           className="text-area"
           rows={3}
@@ -179,7 +187,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>12. Что сегодня происходило?</h3>
+        <h3>Что сегодня происходило?</h3>
         <p className="section-hint">события, которые могли повлиять на состояние</p>
         <textarea
           className="text-area"
@@ -190,7 +198,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section">
-        <h3>13. Что помогло?</h3>
+        <h3>Что помогло?</h3>
         <MultiSelect
           label="Можно отметить несколько"
           options={HELPED_OPTIONS}
@@ -201,17 +209,17 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
         />
       </section>
 
-      <section className="form-section">
-        <ScaleSlider
-          label="14. Насколько тяжело мне сейчас проживать это состояние"
-          value={entry.hardship}
-          onChange={(v) => update({ hardship: v })}
-          max={10}
-        />
-      </section>
+        <section className="form-section">
+            <h3>Насколько тяжело мне сейчас проживать это состояние</h3>
+            <ScaleSlider
+                value={entry.hardship}
+                onChange={(v) => update({hardship: v})}
+                max={10}
+            />
+        </section>
 
-      <section className="form-section">
-        <h3>15. Одним предложением</h3>
+        <section className="form-section">
+        <h3>Одним предложением</h3>
         <input
           type="text"
           className="text-input"
@@ -222,7 +230,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       </section>
 
       <section className="form-section reflection">
-        <h3>💙 Небольшая просьба к себе</h3>
+        <h3>💛 Небольшое обращение к себе</h3>
         <label className="stacked-field">
           Что сегодня помогло мне хотя бы на 1%?
           <textarea

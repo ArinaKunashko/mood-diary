@@ -23,12 +23,24 @@ function moodScore(entry) {
   return Math.round(avgValence * entry.intensity * 10) / 10
 }
 
+function numberOrNull(value) {
+  if (value === '' || value === null || value === undefined) return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function cycleLabel(entry) {
+  const day = numberOrNull(entry.cycleDay)
+  return day ? `${day} день цикла` : 'день цикла не указан'
+}
+
 const CRYING_COLORS = ['#E8E2D6', '#CBD6D0', '#A9C2B6', '#7C9885', '#5F7A68']
 const DREAM_COLORS = {
   calm: '#7C9885',
   anxious: '#A08CB3',
   unknown: '#F0EDE6'
 }
+const FACE_REDNESS_COLORS = ['#F0EDE6', '#F7D7CE', '#EDA998', '#D98B7A', '#C75F4E', '#99493F']
 
 function PrettyTooltip({ active, payload, label, type }) {
   if (!active || !payload || payload.length === 0) return null
@@ -42,6 +54,7 @@ function PrettyTooltip({ active, payload, label, type }) {
     return (
       <div className="chart-tooltip">
         <div className="chart-tooltip-date">{label}</div>
+        <div className="chart-tooltip-cycle">{firstPayload.cycleLabel}</div>
         <div className="chart-tooltip-row">
           <span>{visiblePayload[0].name}</span>
           <strong>{firstPayload.description || 'не указано'}</strong>
@@ -54,6 +67,7 @@ function PrettyTooltip({ active, payload, label, type }) {
   return (
     <div className="chart-tooltip">
       <div className="chart-tooltip-date">{label}</div>
+      <div className="chart-tooltip-cycle">{firstPayload.cycleLabel}</div>
       {visiblePayload.map((item) => (
         <div key={item.dataKey} className="chart-tooltip-row">
           <span>
@@ -81,29 +95,34 @@ export default function Stats({ entries }) {
 
   const data = sortedEntries.map((e) => ({
     date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+    cycleLabel: cycleLabel(e),
     Тревога: e.anxiety,
     Энергия: e.energy
   }))
 
   const moodData = sortedEntries.map((e) => ({
     date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+    cycleLabel: cycleLabel(e),
     Настроение: moodScore(e)
   }))
 
   const faceRednessData = sortedEntries.map((e) => ({
     date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+    cycleLabel: cycleLabel(e),
     'Покраснение лица': FACE_REDNESS_LEVEL[e.faceRedness] ?? null,
     description: e.faceRedness || 'не указано'
   }))
 
   const dreamData = sortedEntries.map((e) => ({
     date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+    cycleLabel: cycleLabel(e),
     'Тревожность сна': DREAM_LEVEL[e.dreamQuality] ?? null,
     description: e.dreamQuality || 'не указано'
   }))
 
   const cryingData = sortedEntries.map((e) => ({
     date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+    cycleLabel: cycleLabel(e),
     Плач: CRYING_LEVEL[e.crying] ?? null,
     description: e.crying || 'не указано',
     color: CRYING_COLORS[CRYING_LEVEL[e.crying]] || '#F0EDE6'
@@ -147,20 +166,9 @@ export default function Stats({ entries }) {
 
       <h3 style={{ marginTop: 28 }}>Сон</h3>
       <p className="section-hint">
-        0 — не тревожный сон, 1 — тревожный сон. «Не помню» остаётся без точки на графике.
+        Цветная лента показывает ощущение сна по дням. Сюжет сна остаётся в подсказке.
       </p>
-      <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={dreamData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12} />
-            <YAxis domain={[0, 1]} ticks={[0, 1]} stroke="var(--color-text-soft)" fontSize={12} />
-            <Tooltip content={<PrettyTooltip type="description" />} />
-            <Line type="stepAfter" dataKey="Тревожность сна" stroke="#A08CB3" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="crying-strip">
+      <div className="symptom-strip">
         {sortedEntries.map((e) => {
           const level = DREAM_LEVEL[e.dreamQuality]
           const label = new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
@@ -169,29 +177,51 @@ export default function Stats({ entries }) {
           return (
             <div
               key={e.id}
-              className="crying-dot has-tooltip"
+              className="symptom-cell has-tooltip"
               style={{ background }}
-              data-tooltip={`${label} — ${e.dreamQuality || 'не указано'}${e.dreamContent ? `: ${e.dreamContent}` : ''}`}
+              data-tooltip={`${label}, ${cycleLabel(e)} — ${e.dreamQuality || 'не указано'}${e.dreamContent ? `: ${e.dreamContent}` : ''}`}
             />
           )
         })}
       </div>
+      <div className="symptom-legend">
+        <span><i style={{ background: DREAM_COLORS.calm }} />Не тревожный сон</span>
+        <span><i style={{ background: DREAM_COLORS.anxious }} />Тревожный сон</span>
+        <span><i style={{ background: DREAM_COLORS.unknown }} />Не помню</span>
+      </div>
 
       <h3 style={{ marginTop: 28 }}>Покраснение лица</h3>
       <p className="section-hint">
-        0 — не краснело, 1 — немного, 2 — сильно, 3 — краснело и зудело,
-        4 — краснело и болело, 5 — краснело, зудело и болело.
+        Лента показывает степень и характер покраснения по дням: от светлого “не краснело” до насыщенного “краснело, зудело и болело”.
       </p>
-      <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={faceRednessData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12} />
-            <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12} />
-            <Tooltip content={<PrettyTooltip type="description" />} />
-            <Line type="monotone" dataKey="Покраснение лица" stroke="#C75F4E" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="symptom-strip">
+        {faceRednessData.map((entry, index) => {
+          const level = entry['Покраснение лица']
+          const background = level === null ? '#F0EDE6' : FACE_REDNESS_COLORS[level]
+          return (
+            <div
+              key={`${entry.date}-${index}`}
+              className="symptom-cell has-tooltip"
+              style={{ background }}
+              data-tooltip={`${entry.date}, ${entry.cycleLabel} — ${entry.description}`}
+            />
+          )
+        })}
+      </div>
+      <div className="symptom-legend">
+        {[
+          'Не краснело',
+          'Немного краснело',
+          'Краснело сильно',
+          'Краснело и зудело',
+          'Краснело и болело',
+          'Краснело, зудело и болело'
+        ].map((label) => (
+          <span key={label}>
+            <i style={{ background: FACE_REDNESS_COLORS[FACE_REDNESS_LEVEL[label]] }} />
+            {label}
+          </span>
+        ))}
       </div>
 
       <h3 style={{ marginTop: 28 }}>Плач по дням</h3>

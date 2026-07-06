@@ -37,6 +37,7 @@ export default function EntryDetail({ entry, onEdit, onClose }) {
       {entry.oneSentence && <p className="detail-sentence">«{entry.oneSentence}»</p>}
 
       <TagRow label="Эмоции" items={entry.emotions} />
+      <Row label="День цикла" value={entry.cycleDay ? `${entry.cycleDay} день` : null} />
       <Row label="Другие эмоции" value={entry.emotionOther} />
       <Row label="Сила эмоций" value={entry.intensity !== null ? `${entry.intensity}/5` : null} />
       <Row label="Тревога" value={entry.anxiety !== null ? `${entry.anxiety}/5` : null} />
@@ -58,7 +59,7 @@ export default function EntryDetail({ entry, onEdit, onClose }) {
 
       {(entry.q1 || entry.q2 || entry.q3) && (
         <div className="detail-reflection">
-          <h3>💙 Небольшая просьба к себе</h3>
+          <h3>💙 Небольшое обращение к себе</h3>
           <Row label="Что помогло хотя бы на 1%" value={entry.q1} />
           <Row label="Что нужнее всего" value={entry.q2} />
           <Row label="Что можно сделать в ближайший час" value={entry.q3} />
