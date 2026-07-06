@@ -55,7 +55,15 @@ button {
   font-family: var(--font-display);
   font-weight: 500;
   font-size: 1.6rem;
-  margin: 0 0 16px;
+  margin: 0;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .tabs {
@@ -82,6 +90,12 @@ button {
   font-weight: 500;
 }
 
+.cloud-status {
+  padding: 8px 0 12px;
+  font-size: 0.78rem;
+  color: var(--color-text-soft);
+}
+
 .app-main {
   flex: 1;
   max-width: 760px;
@@ -95,6 +109,61 @@ button {
   padding: 20px;
   font-size: 0.8rem;
   color: var(--color-text-soft);
+}
+
+/* PIN */
+
+.pin-page {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.pin-panel {
+  width: min(100%, 380px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 28px;
+}
+
+.pin-panel h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.7rem;
+  margin: 0 0 20px;
+}
+
+.pin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+  color: var(--color-text-soft);
+}
+
+.pin-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.pin-field input:focus {
+  outline: 2px solid var(--color-sage);
+  outline-offset: 2px;
+}
+
+.pin-error {
+  margin: -4px 0 14px;
+  color: #8F4F43;
+  font-size: 0.88rem;
 }
 
 /* Form */
@@ -278,6 +347,11 @@ button {
 
 .btn:hover { opacity: 0.9; }
 
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .btn-primary {
   background: var(--color-sage);
   color: white;
@@ -306,6 +380,25 @@ button {
 .history-count {
   font-size: 0.85rem;
   color: var(--color-text-soft);
+}
+
+.notice {
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 0.88rem;
+}
+
+.notice-success {
+  color: var(--color-sage-dark);
+  background: #EEF4EE;
+  border: 1px solid #D6E3D8;
+}
+
+.notice-error {
+  color: #8F4F43;
+  background: #FBEDE8;
+  border: 1px solid #F0CFC5;
 }
 
 .entry-list {

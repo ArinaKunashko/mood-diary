@@ -7,7 +7,7 @@ function toggleInArray(arr, value) {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
 }
 
-export default function EntryForm({ initialEntry, onSave, onCancel }) {
+export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = false }) {
   const [entry, setEntry] = useState(initialEntry)
 
   const update = (patch) => setEntry((prev) => ({ ...prev, ...patch }))
@@ -230,8 +230,8 @@ export default function EntryForm({ initialEntry, onSave, onCancel }) {
             Отмена
           </button>
         )}
-        <button type="submit" className="btn btn-primary">
-          Сохранить запись
+        <button type="submit" className="btn btn-primary" disabled={isSaving}>
+          {isSaving ? 'Сохраняю...' : 'Сохранить запись'}
         </button>
       </div>
     </form>

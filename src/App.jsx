@@ -2,8 +2,16 @@ import { useEffect, useState } from 'react'
 import EntryForm from './components/EntryForm.jsx'
 import EntryList from './components/EntryList.jsx'
 import EntryDetail from './components/EntryDetail.jsx'
+import PinGate, { clearSavedAccess, hasSavedAccess } from './components/PinGate.jsx'
 import Stats from './components/Stats.jsx'
-import { loadEntries, saveEntries, makeEmptyEntry, exportEntriesAsJSON } from './utils/storage.js'
+import {
+  deleteEntry,
+  exportEntriesAsJSON,
+  loadEntries,
+  makeEmptyEntry,
+  migrateLocalEntriesToCloud,
+  saveEntry
+} from './utils/storage.js'
 
 const TABS = [
   { id: 'new', label: 'Новая запись' },
@@ -12,44 +20,120 @@ const TABS = [
 ]
 
 export default function App() {
+  const [isUnlocked, setIsUnlocked] = useState(() => hasSavedAccess())
   const [entries, setEntries] = useState([])
   const [tab, setTab] = useState('new')
   const [draft, setDraft] = useState(() => makeEmptyEntry())
   const [selectedEntry, setSelectedEntry] = useState(null)
   const [editingEntry, setEditingEntry] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [statusMessage, setStatusMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    setEntries(loadEntries())
-  }, [])
+    if (!isUnlocked) return
 
-  const persist = (next) => {
-    setEntries(next)
-    saveEntries(next)
+    async function initializeEntries() {
+      setIsLoading(true)
+      try {
+        const cloudEntries = await loadEntries()
+        const migratedEntries = await migrateLocalEntriesToCloud(cloudEntries)
+        const nextEntries = [...cloudEntries, ...migratedEntries]
+
+        setEntries(nextEntries)
+        if (migratedEntries.length > 0) {
+          setStatusMessage(`Перенесено в облако: ${migratedEntries.length} записей`)
+        }
+      } catch (e) {
+        setErrorMessage(`Не удалось подключиться к Supabase: ${e.message}`)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    initializeEntries()
+  }, [isUnlocked])
+
+  const handleLogout = () => {
+    clearSavedAccess()
+    setIsUnlocked(false)
+    setEntries([])
+    setSelectedEntry(null)
+    setEditingEntry(null)
+    setStatusMessage('')
+    setErrorMessage('')
   }
 
-  const handleSaveNew = (entry) => {
-    persist([...entries, entry])
+  const persistEntry = async (entry) => {
+    setIsSaving(true)
+    setErrorMessage('')
+
+    try {
+      const savedEntry = await saveEntry(entry)
+      setEntries((current) => {
+        const exists = current.some((item) => item.id === savedEntry.id)
+        return exists
+          ? current.map((item) => (item.id === savedEntry.id ? savedEntry : item))
+          : [...current, savedEntry]
+      })
+      setStatusMessage('Запись сохранена в Supabase')
+      return savedEntry
+    } catch (e) {
+      setErrorMessage(`Не удалось сохранить запись: ${e.message}`)
+      return null
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSaveNew = async (entry) => {
+    const savedEntry = await persistEntry(entry)
+    if (!savedEntry) return
+
     setDraft(makeEmptyEntry())
     setTab('history')
   }
 
-  const handleSaveEdit = (entry) => {
-    persist(entries.map((e) => (e.id === entry.id ? entry : e)))
+  const handleSaveEdit = async (entry) => {
+    const savedEntry = await persistEntry(entry)
+    if (!savedEntry) return
+
     setEditingEntry(null)
-    setSelectedEntry(entry)
+    setSelectedEntry(savedEntry)
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!confirm('Удалить эту запись? Это действие нельзя отменить.')) return
-    persist(entries.filter((e) => e.id !== id))
-    if (selectedEntry?.id === id) setSelectedEntry(null)
+
+    setIsSaving(true)
+    setErrorMessage('')
+
+    try {
+      await deleteEntry(id)
+      setEntries((current) => current.filter((e) => e.id !== id))
+      if (selectedEntry?.id === id) setSelectedEntry(null)
+      setStatusMessage('Запись удалена из Supabase')
+    } catch (e) {
+      setErrorMessage(`Не удалось удалить запись: ${e.message}`)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
+    !isUnlocked ? (
+      <PinGate onUnlock={() => setIsUnlocked(true)} />
+    ) : (
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header-inner">
-          <h1>🌿 Дневник состояния</h1>
+          <div className="header-top">
+            <h1>🌿 Дневник состояния</h1>
+            <button type="button" className="btn btn-ghost btn-small" onClick={handleLogout}>
+              Выйти
+            </button>
+          </div>
           <nav className="tabs">
             {TABS.map((t) => (
               <button
@@ -65,19 +149,31 @@ export default function App() {
               </button>
             ))}
           </nav>
+          <div className="cloud-status" aria-live="polite">
+            {isLoading ? 'Подключаюсь к Supabase...' : 'Облачное сохранение включено'}
+          </div>
         </div>
       </header>
 
       <main className="app-main">
-        {tab === 'new' && (
+        {errorMessage && <div className="notice notice-error">{errorMessage}</div>}
+        {!errorMessage && statusMessage && <div className="notice notice-success">{statusMessage}</div>}
+        {isLoading && (
+          <div className="empty-state">
+            <p>Загружаю записи из Supabase...</p>
+          </div>
+        )}
+
+        {!isLoading && tab === 'new' && (
           <EntryForm
             key="new-form"
             initialEntry={draft}
             onSave={handleSaveNew}
+            isSaving={isSaving}
           />
         )}
 
-        {tab === 'history' && !selectedEntry && !editingEntry && (
+        {!isLoading && tab === 'history' && !selectedEntry && !editingEntry && (
           <>
             <div className="history-toolbar">
               <span className="history-count">
@@ -93,7 +189,7 @@ export default function App() {
           </>
         )}
 
-        {tab === 'history' && selectedEntry && !editingEntry && (
+        {!isLoading && tab === 'history' && selectedEntry && !editingEntry && (
           <EntryDetail
             entry={selectedEntry}
             onEdit={() => setEditingEntry(selectedEntry)}
@@ -101,21 +197,23 @@ export default function App() {
           />
         )}
 
-        {tab === 'history' && editingEntry && (
+        {!isLoading && tab === 'history' && editingEntry && (
           <EntryForm
             key={editingEntry.id}
             initialEntry={editingEntry}
             onSave={handleSaveEdit}
             onCancel={() => setEditingEntry(null)}
+            isSaving={isSaving}
           />
         )}
 
-        {tab === 'stats' && <Stats entries={entries} />}
+        {!isLoading && tab === 'stats' && <Stats entries={entries} />}
       </main>
 
       <footer className="app-footer">
-        <p>Все записи хранятся только в этом браузере (localStorage) — никуда не отправляются.</p>
+        <p>Записи сохраняются в Supabase. Доступ к дневнику открывается после ввода PIN-кода.</p>
       </footer>
     </div>
+    )
   )
 }
