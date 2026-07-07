@@ -47,6 +47,7 @@ export default function EntryDetail({ entry, onEdit, onClose }) {
       <Row label="Желание активности" value={entry.activity !== null ? `${entry.activity}/5` : null} />
       <Row label="Плач" value={entry.crying} />
       <Row label="Сон" value={entry.dreamQuality} />
+      <Row label="Как быстро уснула" value={entry.sleepLatency} />
       <Row label="Что снилось" value={entry.dreamContent} />
       <Row label="Краснело ли лицо" value={entry.faceRedness} />
       <TagRow label="Тело" items={entry.body} />

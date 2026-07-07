@@ -124,6 +124,7 @@ export function makeEmptyEntry() {
     activity: null,
     crying: '',
     dreamQuality: '',
+    sleepLatency: '',
     dreamContent: '',
     faceRedness: '',
     body: [],

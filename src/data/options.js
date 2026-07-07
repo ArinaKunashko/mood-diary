@@ -39,6 +39,20 @@ export const DREAM_LEVEL = {
   'Не помню': null
 }
 
+export const SLEEP_LATENCY_OPTIONS = [
+  'Быстро, до 30 минут',
+  '30–60 минут',
+  'Больше часа',
+  'Не помню'
+]
+
+export const SLEEP_LATENCY_LEVEL = {
+  'Быстро, до 30 минут': 0,
+  '30–60 минут': 1,
+  'Больше часа': 2,
+  'Не помню': null
+}
+
 export const FACE_REDNESS_OPTIONS = [
   'Не краснело',
   'Немного краснело',

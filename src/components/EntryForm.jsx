@@ -8,7 +8,8 @@ import {
   EMOTIONS,
   FACE_REDNESS_OPTIONS,
   HELPED_OPTIONS,
-  SCALE_LABELS
+  SCALE_LABELS,
+  SLEEP_LATENCY_OPTIONS
 } from '../data/options.js'
 
 function toggleInArray(arr, value) {
@@ -133,6 +134,20 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
               className={`pill ${entry.dreamQuality === opt ? 'is-active' : ''}`}
               onClick={() => update({ dreamQuality: entry.dreamQuality === opt ? '' : opt })}
               aria-pressed={entry.dreamQuality === opt}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+        <h4 className="subsection-title">Как быстро получилось уснуть?</h4>
+        <div className="pill-row">
+          {SLEEP_LATENCY_OPTIONS.map((opt) => (
+            <button
+              type="button"
+              key={opt}
+              className={`pill ${entry.sleepLatency === opt ? 'is-active' : ''}`}
+              onClick={() => update({ sleepLatency: entry.sleepLatency === opt ? '' : opt })}
+              aria-pressed={entry.sleepLatency === opt}
             >
               {opt}
             </button>

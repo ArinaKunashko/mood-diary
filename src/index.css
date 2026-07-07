@@ -222,6 +222,13 @@ button {
   margin: -6px 0 12px;
 }
 
+.subsection-title {
+  margin: 16px 0 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-soft);
+}
+
 .field { margin-bottom: 14px; }
 .field:last-child { margin-bottom: 0; }
 

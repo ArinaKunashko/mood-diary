@@ -12,7 +12,14 @@ import {
   XAxis,
   YAxis
 } from 'recharts'
-import { EMOTION_VALENCE, CRYING_LEVEL, DREAM_LEVEL, FACE_REDNESS_LEVEL } from '../data/options.js'
+import {
+  CRYING_LEVEL,
+  DREAM_LEVEL,
+  EMOTION_VALENCE,
+  FACE_REDNESS_LEVEL,
+  SLEEP_LATENCY_LEVEL,
+  SLEEP_LATENCY_OPTIONS
+} from '../data/options.js'
 
 // Настроение = средний знак выбранных эмоций (от -1 до 1) * сила эмоций (0-5).
 // Получается число от -5 (сильные негативные эмоции) до +5 (сильные позитивные).
@@ -40,6 +47,7 @@ const DREAM_COLORS = {
   anxious: '#A08CB3',
   unknown: '#F0EDE6'
 }
+const SLEEP_LATENCY_COLORS = ['#7C9885', '#D98B7A', '#A08CB3']
 const FACE_REDNESS_COLORS = ['#F0EDE6', '#F7D7CE', '#EDA998', '#D98B7A', '#C75F4E', '#99493F']
 
 function PrettyTooltip({ active, payload, label, type }) {
@@ -120,6 +128,13 @@ export default function Stats({ entries }) {
     description: e.dreamQuality || 'не указано'
   }))
 
+  const sleepLatencyData = sortedEntries.map((e) => ({
+    date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+    cycleLabel: cycleLabel(e),
+    level: SLEEP_LATENCY_LEVEL[e.sleepLatency] ?? null,
+    description: e.sleepLatency || 'не указано'
+  }))
+
   const cryingData = sortedEntries.map((e) => ({
     date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
     cycleLabel: cycleLabel(e),
@@ -188,6 +203,32 @@ export default function Stats({ entries }) {
         <span><i style={{ background: DREAM_COLORS.calm }} />Не тревожный сон</span>
         <span><i style={{ background: DREAM_COLORS.anxious }} />Тревожный сон</span>
         <span><i style={{ background: DREAM_COLORS.unknown }} />Не помню</span>
+      </div>
+
+      <h3 style={{ marginTop: 28 }}>Засыпание</h3>
+      <p className="section-hint">
+        Лента показывает, насколько быстро получилось уснуть.
+      </p>
+      <div className="symptom-strip">
+        {sleepLatencyData.map((entry, index) => {
+          const background = entry.level === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[entry.level]
+          return (
+            <div
+              key={`${entry.date}-${index}`}
+              className="symptom-cell has-tooltip"
+              style={{ background }}
+              data-tooltip={`${entry.date}, ${entry.cycleLabel} — ${entry.description}`}
+            />
+          )
+        })}
+      </div>
+      <div className="symptom-legend">
+        {SLEEP_LATENCY_OPTIONS.map((label) => (
+          <span key={label}>
+            <i style={{ background: SLEEP_LATENCY_LEVEL[label] === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[SLEEP_LATENCY_LEVEL[label]] }} />
+            {label}
+          </span>
+        ))}
       </div>
 
       <h3 style={{ marginTop: 28 }}>Покраснение лица</h3>
