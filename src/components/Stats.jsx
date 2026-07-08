@@ -3,7 +3,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   Line,
   LineChart,
   ReferenceLine,
@@ -101,10 +100,15 @@ export default function Stats({ entries }) {
 
   const sortedEntries = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date))
 
-  const data = sortedEntries.map((e) => ({
+  const anxietyData = sortedEntries.map((e) => ({
     date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
     cycleLabel: cycleLabel(e),
-    Тревога: e.anxiety,
+    Тревога: e.anxiety
+  }))
+
+  const energyData = sortedEntries.map((e) => ({
+    date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+    cycleLabel: cycleLabel(e),
     Энергия: e.energy
   }))
 
@@ -145,17 +149,29 @@ export default function Stats({ entries }) {
 
   return (
     <div className="stats-block">
-      <h3>Динамика по записям</h3>
-      <p className="section-hint">Шкалы 0–5: тревога и энергия.</p>
+      <h3>Тревога</h3>
+      <p className="section-hint">Шкала 0–5: чем выше значение, тем сильнее тревога.</p>
       <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={anxietyData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12} />
             <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12} />
             <Tooltip content={<PrettyTooltip />} />
-            <Legend />
             <Line type="monotone" dataKey="Тревога" stroke="#A08CB3" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <h3 style={{ marginTop: 28 }}>Энергия</h3>
+      <p className="section-hint">Шкала 0–5: чем выше значение, тем больше ресурса.</p>
+      <div className="chart-wrap">
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={energyData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+            <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12} />
+            <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12} />
+            <Tooltip content={<PrettyTooltip />} />
             <Line type="monotone" dataKey="Энергия" stroke="#7C9885" strokeWidth={2} dot={{ r: 3 }} connectNulls />
           </LineChart>
         </ResponsiveContainer>

@@ -412,6 +412,12 @@ button {
   border: 1px solid #F0CFC5;
 }
 
+.notice-warning {
+  color: #7B6543;
+  background: #F7F0DF;
+  border: 1px solid #E9D7AE;
+}
+
 .entry-list {
   list-style: none;
   margin: 0;

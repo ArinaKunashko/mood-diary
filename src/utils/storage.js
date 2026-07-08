@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js'
 
 const STORAGE_KEY = 'mood-diary-entries-v1'
+const CACHE_KEY = 'mood-diary-cloud-cache-v1'
 const TABLE_NAME = 'diary_entries'
 
 function normalizeEntry(entry) {
@@ -43,6 +44,29 @@ function loadLocalEntries() {
   } catch (e) {
     console.error('Не удалось прочитать старые записи из localStorage', e)
     return []
+  }
+}
+
+export function loadCachedEntries() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    if (!raw) return loadLocalEntries()
+
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.map(normalizeEntry) : []
+  } catch (e) {
+    console.error('Не удалось прочитать кэш записей', e)
+    return loadLocalEntries()
+  }
+}
+
+export function cacheEntries(entries) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(entries.map(normalizeEntry)))
+    return true
+  } catch (e) {
+    console.error('Не удалось обновить кэш записей', e)
+    return false
   }
 }
 

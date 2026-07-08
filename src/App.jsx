@@ -5,8 +5,10 @@ import EntryDetail from './components/EntryDetail.jsx'
 import PinGate, { clearSavedAccess, hasSavedAccess } from './components/PinGate.jsx'
 import Stats from './components/Stats.jsx'
 import {
+  cacheEntries,
   deleteEntry,
   exportEntriesAsJSON,
+  loadCachedEntries,
   loadEntries,
   makeEmptyEntry,
   migrateLocalEntriesToCloud,
@@ -36,17 +38,28 @@ export default function App() {
 
     async function initializeEntries() {
       setIsLoading(true)
+      setErrorMessage('')
       try {
         const cloudEntries = await loadEntries()
         const migratedEntries = await migrateLocalEntriesToCloud(cloudEntries)
         const nextEntries = [...cloudEntries, ...migratedEntries]
 
         setEntries(nextEntries)
+        cacheEntries(nextEntries)
         if (migratedEntries.length > 0) {
           setStatusMessage(`Перенесено в облако: ${migratedEntries.length} записей`)
+        } else {
+          setStatusMessage('')
         }
       } catch (e) {
-        setErrorMessage(`Не удалось подключиться к Supabase: ${e.message}`)
+        const cachedEntries = loadCachedEntries()
+        if (cachedEntries.length > 0) {
+          setEntries(cachedEntries)
+          setStatusMessage('Показаны записи из локального кэша. Когда интернет вернётся, дневник снова подключится к Supabase.')
+          setErrorMessage(`Не удалось подключиться к Supabase: ${e.message}`)
+        } else {
+          setErrorMessage(`Не удалось подключиться к Supabase, а локальный кэш пока пуст: ${e.message}`)
+        }
       } finally {
         setIsLoading(false)
       }
@@ -73,9 +86,11 @@ export default function App() {
       const savedEntry = await saveEntry(entry)
       setEntries((current) => {
         const exists = current.some((item) => item.id === savedEntry.id)
-        return exists
+        const nextEntries = exists
           ? current.map((item) => (item.id === savedEntry.id ? savedEntry : item))
           : [...current, savedEntry]
+        cacheEntries(nextEntries)
+        return nextEntries
       })
       setStatusMessage('Запись сохранена в Supabase')
       return savedEntry
@@ -111,7 +126,11 @@ export default function App() {
 
     try {
       await deleteEntry(id)
-      setEntries((current) => current.filter((e) => e.id !== id))
+      setEntries((current) => {
+        const nextEntries = current.filter((e) => e.id !== id)
+        cacheEntries(nextEntries)
+        return nextEntries
+      })
       if (selectedEntry?.id === id) setSelectedEntry(null)
       setStatusMessage('Запись удалена из Supabase')
     } catch (e) {
@@ -150,14 +169,14 @@ export default function App() {
             ))}
           </nav>
           <div className="cloud-status" aria-live="polite">
-            {isLoading ? 'Подключаюсь к Supabase...' : 'Облачное сохранение включено'}
+            {isLoading ? 'Подключаюсь к Supabase...' : errorMessage ? 'Открыт локальный кэш' : 'Облачное сохранение включено'}
           </div>
         </div>
       </header>
 
       <main className="app-main">
         {errorMessage && <div className="notice notice-error">{errorMessage}</div>}
-        {!errorMessage && statusMessage && <div className="notice notice-success">{statusMessage}</div>}
+        {statusMessage && <div className={`notice ${errorMessage ? 'notice-warning' : 'notice-success'}`}>{statusMessage}</div>}
         {isLoading && (
           <div className="empty-state">
             <p>Загружаю записи из Supabase...</p>
