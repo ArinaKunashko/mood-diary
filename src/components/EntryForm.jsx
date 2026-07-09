@@ -48,6 +48,57 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
         </label>
       </div>
 
+      <div className="form-time-section">
+        <span>Утро</span>
+        <p>Про ночь накануне: как засыпалось и каким был сон.</p>
+      </div>
+
+      <section className="form-section">
+        <h3>Сон накануне</h3>
+        <p className="section-hint">
+          Ощущение сна: страшный сюжет может быть не тревожным.
+        </p>
+        <div className="pill-row">
+          {DREAM_OPTIONS.map((opt) => (
+            <button
+              type="button"
+              key={opt}
+              className={`pill ${entry.dreamQuality === opt ? 'is-active' : ''}`}
+              onClick={() => update({ dreamQuality: entry.dreamQuality === opt ? '' : opt })}
+              aria-pressed={entry.dreamQuality === opt}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+        <h4 className="subsection-title">Как быстро получилось уснуть накануне?</h4>
+        <div className="pill-row">
+          {SLEEP_LATENCY_OPTIONS.map((opt) => (
+            <button
+              type="button"
+              key={opt}
+              className={`pill ${entry.sleepLatency === opt ? 'is-active' : ''}`}
+              onClick={() => update({ sleepLatency: entry.sleepLatency === opt ? '' : opt })}
+              aria-pressed={entry.sleepLatency === opt}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+        <textarea
+          className="text-area other-input"
+          rows={2}
+          placeholder="Сюжет или ощущение сна накануне: призраки, погоня, азарт, игра, страх..."
+          value={entry.dreamContent}
+          onChange={(e) => update({ dreamContent: e.target.value })}
+        />
+      </section>
+
+      <div className="form-time-section">
+        <span>Вечер</span>
+        <p>Про состояние в течение дня и то, как я себя чувствую сейчас.</p>
+      </div>
+
       <section className="form-section">
         <h3> Какие эмоции я сейчас испытываю?</h3>
         <MultiSelect
@@ -119,47 +170,6 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
             </button>
           ))}
         </div>
-      </section>
-
-      <section className="form-section">
-        <h3>Сон</h3>
-        <p className="section-hint">
-          Отмечай именно ощущение сна: страшный сюжет может быть не тревожным, если во сне был азарт или игра.
-        </p>
-        <div className="pill-row">
-          {DREAM_OPTIONS.map((opt) => (
-            <button
-              type="button"
-              key={opt}
-              className={`pill ${entry.dreamQuality === opt ? 'is-active' : ''}`}
-              onClick={() => update({ dreamQuality: entry.dreamQuality === opt ? '' : opt })}
-              aria-pressed={entry.dreamQuality === opt}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-        <h4 className="subsection-title">Как быстро получилось уснуть?</h4>
-        <div className="pill-row">
-          {SLEEP_LATENCY_OPTIONS.map((opt) => (
-            <button
-              type="button"
-              key={opt}
-              className={`pill ${entry.sleepLatency === opt ? 'is-active' : ''}`}
-              onClick={() => update({ sleepLatency: entry.sleepLatency === opt ? '' : opt })}
-              aria-pressed={entry.sleepLatency === opt}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-        <textarea
-          className="text-area other-input"
-          rows={2}
-          placeholder="Сюжет или ощущение сна: призраки, погоня, азарт, игра, страх..."
-          value={entry.dreamContent}
-          onChange={(e) => update({ dreamContent: e.target.value })}
-        />
       </section>
 
       <section className="form-section">

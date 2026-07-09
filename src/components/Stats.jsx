@@ -88,6 +88,19 @@ function PrettyTooltip({ active, payload, label, type }) {
   )
 }
 
+function SymptomCell({ color, date, tooltip }) {
+  return (
+    <div className="symptom-day">
+      <div
+        className="symptom-cell has-tooltip"
+        style={{ background: color }}
+        data-tooltip={tooltip}
+      />
+      <span>{date}</span>
+    </div>
+  )
+}
+
 export default function Stats({ entries }) {
   if (entries.length === 0) {
     return (
@@ -206,11 +219,11 @@ export default function Stats({ entries }) {
           const background =
             level === 0 ? DREAM_COLORS.calm : level === 1 ? DREAM_COLORS.anxious : DREAM_COLORS.unknown
           return (
-            <div
+            <SymptomCell
               key={e.id}
-              className="symptom-cell has-tooltip"
-              style={{ background }}
-              data-tooltip={`${label}, ${cycleLabel(e)} — ${e.dreamQuality || 'не указано'}${e.dreamContent ? `: ${e.dreamContent}` : ''}`}
+              color={background}
+              date={label}
+              tooltip={`${label}, ${cycleLabel(e)} — ${e.dreamQuality || 'не указано'}${e.dreamContent ? `: ${e.dreamContent}` : ''}`}
             />
           )
         })}
@@ -229,11 +242,11 @@ export default function Stats({ entries }) {
         {sleepLatencyData.map((entry, index) => {
           const background = entry.level === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[entry.level]
           return (
-            <div
+            <SymptomCell
               key={`${entry.date}-${index}`}
-              className="symptom-cell has-tooltip"
-              style={{ background }}
-              data-tooltip={`${entry.date}, ${entry.cycleLabel} — ${entry.description}`}
+              color={background}
+              date={entry.date}
+              tooltip={`${entry.date}, ${entry.cycleLabel} — ${entry.description}`}
             />
           )
         })}
@@ -256,11 +269,11 @@ export default function Stats({ entries }) {
           const level = entry['Покраснение лица']
           const background = level === null ? '#F0EDE6' : FACE_REDNESS_COLORS[level]
           return (
-            <div
+            <SymptomCell
               key={`${entry.date}-${index}`}
-              className="symptom-cell has-tooltip"
-              style={{ background }}
-              data-tooltip={`${entry.date}, ${entry.cycleLabel} — ${entry.description}`}
+              color={background}
+              date={entry.date}
+              tooltip={`${entry.date}, ${entry.cycleLabel} — ${entry.description}`}
             />
           )
         })}
