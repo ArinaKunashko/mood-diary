@@ -41,6 +41,9 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
         <label className="date-field">
           День цикла
           <input
+            type="number"
+            min="1"
+            max="60"
             inputMode="numeric"
             value={entry.cycleDay ?? ''}
             onChange={(e) => update({ cycleDay: e.target.value })}
