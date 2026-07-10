@@ -40,6 +40,18 @@ function cycleLabel(entry) {
   return day ? `${day} день цикла` : 'день цикла не указан'
 }
 
+function dateInfo(date) {
+  const value = new Date(date)
+  const shortDate = value.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+  const weekday = value.toLocaleDateString('ru-RU', { weekday: 'long' })
+
+  return {
+    shortDate,
+    weekday,
+    fullLabel: `${weekday}, ${shortDate}`
+  }
+}
+
 const CRYING_COLORS = ['#E8E2D6', '#CBD6D0', '#A9C2B6', '#7C9885', '#5F7A68']
 const DREAM_COLORS = {
   calm: '#7C9885',
@@ -60,7 +72,7 @@ function PrettyTooltip({ active, payload, label, type }) {
   if (type === 'description') {
     return (
       <div className="chart-tooltip">
-        <div className="chart-tooltip-date">{label}</div>
+        <div className="chart-tooltip-date">{firstPayload.dateLabel || label}</div>
         <div className="chart-tooltip-cycle">{firstPayload.cycleLabel}</div>
         <div className="chart-tooltip-row">
           <span>{visiblePayload[0].name}</span>
@@ -73,7 +85,7 @@ function PrettyTooltip({ active, payload, label, type }) {
 
   return (
     <div className="chart-tooltip">
-      <div className="chart-tooltip-date">{label}</div>
+      <div className="chart-tooltip-date">{firstPayload.dateLabel || label}</div>
       <div className="chart-tooltip-cycle">{firstPayload.cycleLabel}</div>
       {visiblePayload.map((item) => (
         <div key={item.dataKey} className="chart-tooltip-row">
@@ -88,7 +100,7 @@ function PrettyTooltip({ active, payload, label, type }) {
   )
 }
 
-function SymptomCell({ color, date, tooltip }) {
+function SymptomCell({ color, date, weekday, tooltip }) {
   return (
     <div className="symptom-day">
       <div
@@ -97,6 +109,7 @@ function SymptomCell({ color, date, tooltip }) {
         data-tooltip={tooltip}
       />
       <span>{date}</span>
+      {weekday && <small>{weekday}</small>}
     </div>
   )
 }
@@ -113,52 +126,88 @@ export default function Stats({ entries }) {
 
   const sortedEntries = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date))
 
-  const anxietyData = sortedEntries.map((e) => ({
-    date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
-    cycleLabel: cycleLabel(e),
-    Тревога: e.anxiety
-  }))
+  const anxietyData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.weekday,
+      cycleLabel: cycleLabel(e),
+      Тревога: e.anxiety
+    }
+  })
 
-  const energyData = sortedEntries.map((e) => ({
-    date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
-    cycleLabel: cycleLabel(e),
-    Энергия: e.energy
-  }))
+  const energyData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.weekday,
+      cycleLabel: cycleLabel(e),
+      Энергия: e.energy
+    }
+  })
 
-  const moodData = sortedEntries.map((e) => ({
-    date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
-    cycleLabel: cycleLabel(e),
-    Настроение: moodScore(e)
-  }))
+  const moodData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.weekday,
+      cycleLabel: cycleLabel(e),
+      Настроение: moodScore(e)
+    }
+  })
 
-  const faceRednessData = sortedEntries.map((e) => ({
-    date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
-    cycleLabel: cycleLabel(e),
-    'Покраснение лица': FACE_REDNESS_LEVEL[e.faceRedness] ?? null,
-    description: e.faceRedness || 'не указано'
-  }))
+  const faceRednessData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.weekday,
+      cycleLabel: cycleLabel(e),
+      'Покраснение лица': FACE_REDNESS_LEVEL[e.faceRedness] ?? null,
+      description: e.faceRedness || 'не указано'
+    }
+  })
 
-  const dreamData = sortedEntries.map((e) => ({
-    date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
-    cycleLabel: cycleLabel(e),
-    'Тревожность сна': DREAM_LEVEL[e.dreamQuality] ?? null,
-    description: e.dreamQuality || 'не указано'
-  }))
+  const dreamData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.weekday,
+      cycleLabel: cycleLabel(e),
+      'Тревожность сна': DREAM_LEVEL[e.dreamQuality] ?? null,
+      description: e.dreamQuality || 'не указано',
+      dreamContent: e.dreamContent
+    }
+  })
 
-  const sleepLatencyData = sortedEntries.map((e) => ({
-    date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
-    cycleLabel: cycleLabel(e),
-    level: SLEEP_LATENCY_LEVEL[e.sleepLatency] ?? null,
-    description: e.sleepLatency || 'не указано'
-  }))
+  const sleepLatencyData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.weekday,
+      cycleLabel: cycleLabel(e),
+      level: SLEEP_LATENCY_LEVEL[e.sleepLatency] ?? null,
+      description: e.sleepLatency || 'не указано'
+    }
+  })
 
-  const cryingData = sortedEntries.map((e) => ({
-    date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
-    cycleLabel: cycleLabel(e),
-    Плач: CRYING_LEVEL[e.crying] ?? null,
-    description: e.crying || 'не указано',
-    color: CRYING_COLORS[CRYING_LEVEL[e.crying]] || '#F0EDE6'
-  }))
+  const cryingData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.weekday,
+      cycleLabel: cycleLabel(e),
+      Плач: CRYING_LEVEL[e.crying] ?? null,
+      description: e.crying || 'не указано',
+      color: CRYING_COLORS[CRYING_LEVEL[e.crying]] || '#F0EDE6'
+    }
+  })
 
   return (
     <div className="stats-block">
@@ -213,17 +262,17 @@ export default function Stats({ entries }) {
         Цветная лента показывает ощущение сна по дням. Сюжет сна остаётся в подсказке.
       </p>
       <div className="symptom-strip">
-        {sortedEntries.map((e) => {
-          const level = DREAM_LEVEL[e.dreamQuality]
-          const label = new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+        {dreamData.map((entry, index) => {
+          const level = entry['Тревожность сна']
           const background =
             level === 0 ? DREAM_COLORS.calm : level === 1 ? DREAM_COLORS.anxious : DREAM_COLORS.unknown
           return (
             <SymptomCell
-              key={e.id}
+              key={`${entry.date}-${index}`}
               color={background}
-              date={label}
-              tooltip={`${label}, ${cycleLabel(e)} — ${e.dreamQuality || 'не указано'}${e.dreamContent ? `: ${e.dreamContent}` : ''}`}
+              date={entry.date}
+              weekday={entry.weekday}
+              tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}${entry.dreamContent ? `: ${entry.dreamContent}` : ''}`}
             />
           )
         })}
@@ -246,7 +295,8 @@ export default function Stats({ entries }) {
               key={`${entry.date}-${index}`}
               color={background}
               date={entry.date}
-              tooltip={`${entry.date}, ${entry.cycleLabel} — ${entry.description}`}
+              weekday={entry.weekday}
+              tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
             />
           )
         })}
@@ -273,7 +323,8 @@ export default function Stats({ entries }) {
               key={`${entry.date}-${index}`}
               color={background}
               date={entry.date}
-              tooltip={`${entry.date}, ${entry.cycleLabel} — ${entry.description}`}
+              weekday={entry.weekday}
+              tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
             />
           )
         })}

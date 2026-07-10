@@ -752,6 +752,17 @@ button {
   white-space: nowrap;
 }
 
+.symptom-day small {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-text-soft);
+  font-size: 0.62rem;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0.78;
+}
+
 .crying-strip {
   display: flex;
   flex-wrap: wrap;
