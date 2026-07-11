@@ -50,6 +50,7 @@ export default function EntryDetail({ entry, onEdit, onClose }) {
       <Row label="Как быстро уснула" value={entry.sleepLatency} />
       <Row label="Что снилось" value={entry.dreamContent} />
       <Row label="Краснело ли лицо" value={entry.faceRedness} />
+      <Row label="С чем связано покраснение" value={entry.faceRednessReason} />
       <TagRow label="Тело" items={entry.body} />
       <Row label="Другие ощущения" value={entry.bodyOther} />
       <Row label="Мысли" value={entry.thoughts} />

@@ -52,6 +52,38 @@ function dateInfo(date) {
   }
 }
 
+function normalizeText(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ')
+}
+
+function aggregateTextEntries(entries, field) {
+  const grouped = new Map()
+
+  entries.forEach((entry) => {
+    const text = normalizeText(entry[field])
+    if (!text) return
+
+    const key = text.toLowerCase()
+    const date = dateInfo(entry.date)
+    const existing = grouped.get(key)
+    const occurrence = `${date.fullLabel}, ${cycleLabel(entry)}`
+
+    if (existing) {
+      existing.count += 1
+      existing.dates.push(occurrence)
+      return
+    }
+
+    grouped.set(key, {
+      text,
+      count: 1,
+      dates: [occurrence]
+    })
+  })
+
+  return Array.from(grouped.values()).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text, 'ru'))
+}
+
 const CRYING_COLORS = ['#E8E2D6', '#CBD6D0', '#A9C2B6', '#7C9885', '#5F7A68']
 const DREAM_COLORS = {
   calm: '#7C9885',
@@ -110,6 +142,30 @@ function SymptomCell({ color, date, weekday, tooltip }) {
       />
       <span>{date}</span>
       {weekday && <small>{weekday}</small>}
+    </div>
+  )
+}
+
+function TextInsightList({ title, hint, items, emptyText }) {
+  return (
+    <div className="text-insight-block">
+      <h3>{title}</h3>
+      <p className="section-hint">{hint}</p>
+      {items.length === 0 ? (
+        <p className="text-insight-empty">{emptyText}</p>
+      ) : (
+        <ul className="text-insight-list">
+          {items.map((item) => (
+            <li key={item.text} className="text-insight-item">
+              <div>
+                <strong>{item.text}</strong>
+                <span>{item.dates.join(' · ')}</span>
+              </div>
+              <em>{item.count}</em>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
@@ -208,6 +264,10 @@ export default function Stats({ entries }) {
       color: CRYING_COLORS[CRYING_LEVEL[e.crying]] || '#F0EDE6'
     }
   })
+
+  const faceRednessReasonStats = aggregateTextEntries(sortedEntries, 'faceRednessReason')
+  const helpedOnePercentStats = aggregateTextEntries(sortedEntries, 'q1')
+  const needsStats = aggregateTextEntries(sortedEntries, 'q2')
 
   return (
     <div className="stats-block">
@@ -372,6 +432,27 @@ export default function Stats({ entries }) {
           </span>
         ))}
       </div>
+
+      <TextInsightList
+        title="Возможные причины покраснения"
+        hint="Повторяющиеся ответы из поля «С чем я это связываю?»."
+        items={faceRednessReasonStats}
+        emptyText="Пока нет заполненных причин покраснения."
+      />
+
+      <TextInsightList
+        title="Что помогло хотя бы на 1%"
+        hint="Повторяющиеся ответы из обращения к себе."
+        items={helpedOnePercentStats}
+        emptyText="Пока нет заполненных ответов про то, что помогло."
+      />
+
+      <TextInsightList
+        title="Что сейчас нужнее всего"
+        hint="Повторяющиеся потребности, которые можно обсудить и отследить."
+        items={needsStats}
+        emptyText="Пока нет заполненных ответов про потребности."
+      />
     </div>
   )
 }

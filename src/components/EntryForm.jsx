@@ -190,6 +190,13 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
             </button>
           ))}
         </div>
+        <textarea
+          className="text-area other-input"
+          rows={2}
+          placeholder="С чем я это связываю? Например: разговор, стыд, встреча, усталость, жара..."
+          value={entry.faceRednessReason}
+          onChange={(e) => update({ faceRednessReason: e.target.value })}
+        />
       </section>
 
       <section className="form-section">

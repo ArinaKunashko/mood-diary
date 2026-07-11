@@ -151,6 +151,7 @@ export function makeEmptyEntry() {
     sleepLatency: '',
     dreamContent: '',
     faceRedness: '',
+    faceRednessReason: '',
     body: [],
     bodyOther: '',
     thoughts: '',
