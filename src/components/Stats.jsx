@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -50,6 +51,59 @@ function dateInfo(date) {
     weekday,
     fullLabel: `${weekday}, ${shortDate}`
   }
+}
+
+function parseEntryDate(date) {
+  return new Date(`${date}T00:00:00`)
+}
+
+function addDays(date, days) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+function addMonths(date, months) {
+  const next = new Date(date)
+  next.setMonth(next.getMonth() + months)
+  return next
+}
+
+function startOfWeek(date) {
+  const next = new Date(date)
+  const day = next.getDay() || 7
+  next.setDate(next.getDate() - day + 1)
+  next.setHours(0, 0, 0, 0)
+  return next
+}
+
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
+function periodRange(mode, anchorDate) {
+  if (mode === 'all') return null
+
+  if (mode === 'week') {
+    const start = startOfWeek(anchorDate)
+    return { start, end: addDays(start, 7) }
+  }
+
+  const start = startOfMonth(anchorDate)
+  return { start, end: addMonths(start, 1) }
+}
+
+function periodTitle(mode, anchorDate) {
+  if (mode === 'all') return 'Все записи'
+
+  const range = periodRange(mode, anchorDate)
+  const start = range.start.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+  const endDate = addDays(range.end, -1)
+  const end = endDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+
+  if (mode === 'week') return `${start} — ${end}`
+
+  return range.start.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
 }
 
 function normalizeText(value) {
@@ -171,6 +225,12 @@ function TextInsightList({ title, hint, items, emptyText }) {
 }
 
 export default function Stats({ entries }) {
+  const latestEntryDate = entries.length
+    ? parseEntryDate([...entries].sort((a, b) => parseEntryDate(a.date) - parseEntryDate(b.date)).at(-1).date)
+    : new Date()
+  const [periodMode, setPeriodMode] = useState('month')
+  const [periodAnchor, setPeriodAnchor] = useState(latestEntryDate)
+
   if (entries.length === 0) {
     return (
       <div className="empty-state">
@@ -180,7 +240,29 @@ export default function Stats({ entries }) {
     )
   }
 
-  const sortedEntries = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date))
+  const range = periodRange(periodMode, periodAnchor)
+  const sortedEntries = [...entries]
+    .sort((a, b) => parseEntryDate(a.date) - parseEntryDate(b.date))
+    .filter((entry) => {
+      if (!range) return true
+      const entryDate = parseEntryDate(entry.date)
+      return entryDate >= range.start && entryDate < range.end
+    })
+
+  const goToPreviousPeriod = () => {
+    if (periodMode === 'all') return
+    setPeriodAnchor((current) => periodMode === 'week' ? addDays(current, -7) : addMonths(current, -1))
+  }
+
+  const goToNextPeriod = () => {
+    if (periodMode === 'all') return
+    setPeriodAnchor((current) => periodMode === 'week' ? addDays(current, 7) : addMonths(current, 1))
+  }
+
+  const handleModeChange = (mode) => {
+    setPeriodMode(mode)
+    if (mode !== 'all') setPeriodAnchor(latestEntryDate)
+  }
 
   const anxietyData = sortedEntries.map((e) => {
     const date = dateInfo(e.date)
@@ -271,6 +353,43 @@ export default function Stats({ entries }) {
 
   return (
     <div className="stats-block">
+      <div className="stats-navigation">
+        <div className="stats-period-switch" aria-label="Период статистики">
+          {[
+            { id: 'week', label: 'Неделя' },
+            { id: 'month', label: 'Месяц' },
+            { id: 'all', label: 'Всё' }
+          ].map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              className={periodMode === mode.id ? 'is-active' : ''}
+              onClick={() => handleModeChange(mode.id)}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+        <div className="stats-period-controls">
+          <button type="button" onClick={goToPreviousPeriod} disabled={periodMode === 'all'} aria-label="Предыдущий период">
+            ‹
+          </button>
+          <span>{periodTitle(periodMode, periodAnchor)}</span>
+          <button type="button" onClick={goToNextPeriod} disabled={periodMode === 'all'} aria-label="Следующий период">
+            ›
+          </button>
+        </div>
+      </div>
+
+      {sortedEntries.length === 0 && (
+        <div className="empty-state stats-empty-period">
+          <p>В этом периоде пока нет записей.</p>
+          <p className="empty-state-sub">Переключи неделю или месяц, чтобы посмотреть другие дни.</p>
+        </div>
+      )}
+
+      {sortedEntries.length > 0 && (
+        <>
       <h3>Тревога</h3>
       <p className="section-hint">Шкала 0–5: чем выше значение, тем сильнее тревога.</p>
       <div className="chart-wrap">
@@ -453,6 +572,8 @@ export default function Stats({ entries }) {
         items={needsStats}
         emptyText="Пока нет заполненных ответов про потребности."
       />
+        </>
+      )}
     </div>
   )
 }
