@@ -363,7 +363,7 @@ button {
   gap: 6px;
   font-size: 0.9rem;
   color: var(--color-text-soft);
-  margin-bottom: 14px;
+  margin: 20px 0;
 }
 
 .stacked-field:last-child { margin-bottom: 0; }

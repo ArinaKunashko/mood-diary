@@ -161,6 +161,8 @@ export function makeEmptyEntry() {
     hardship: null,
     oneSentence: '',
     q1: '',
+    needs: [],
+    needsOther: '',
     q2: '',
     q3: '',
     createdAt: Date.now()

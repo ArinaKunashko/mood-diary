@@ -59,11 +59,12 @@ export default function EntryDetail({ entry, onEdit, onClose }) {
       <Row label="Другое (помогло)" value={entry.helpedOther} />
       <Row label="Тяжесть состояния" value={entry.hardship !== null ? `${entry.hardship}/10` : null} />
 
-      {(entry.q1 || entry.q2 || entry.q3) && (
+      {(entry.q1 || entry.q2 || entry.q3 || entry.needs?.length || entry.needsOther) && (
         <div className="detail-reflection">
           <h3>💙 Небольшое обращение к себе</h3>
           <Row label="Что помогло хотя бы на 1%" value={entry.q1} />
-          <Row label="Что нужнее всего" value={entry.q2} />
+          <TagRow label="Что нужнее всего" items={entry.needs} />
+          <Row label="Другое (что нужнее всего)" value={entry.needsOther || entry.q2} />
           <Row label="Что можно сделать в ближайший час" value={entry.q3} />
         </div>
       )}

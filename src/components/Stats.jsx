@@ -138,13 +138,45 @@ function aggregateTextEntries(entries, field) {
   return Array.from(grouped.values()).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text, 'ru'))
 }
 
+function aggregateNeedsEntries(entries) {
+  const grouped = new Map()
+
+  entries.forEach((entry) => {
+    const values = [
+      ...(Array.isArray(entry.needs) ? entry.needs : []),
+      normalizeText(entry.needsOther || entry.q2)
+    ].filter(Boolean)
+
+    values.forEach((text) => {
+      const key = text.toLowerCase()
+      const date = dateInfo(entry.date)
+      const occurrence = `${date.fullLabel}, ${cycleLabel(entry)}`
+      const existing = grouped.get(key)
+
+      if (existing) {
+        existing.count += 1
+        existing.dates.push(occurrence)
+        return
+      }
+
+      grouped.set(key, {
+        text,
+        count: 1,
+        dates: [occurrence]
+      })
+    })
+  })
+
+  return Array.from(grouped.values()).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text, 'ru'))
+}
+
 const CRYING_COLORS = ['#E8E2D6', '#CBD6D0', '#A9C2B6', '#7C9885', '#5F7A68']
 const DREAM_COLORS = {
   calm: '#7C9885',
   anxious: '#A08CB3',
   unknown: '#F0EDE6'
 }
-const SLEEP_LATENCY_COLORS = ['#7C9885', '#D98B7A', '#A08CB3']
+const SLEEP_LATENCY_COLORS = ['#7C9885',  '#A08CB3', '#D98B7A',]
 const FACE_REDNESS_COLORS = ['#F0EDE6', '#F7D7CE', '#EDA998', '#D98B7A', '#C75F4E', '#99493F']
 
 function PrettyTooltip({ active, payload, label, type }) {
@@ -349,7 +381,7 @@ export default function Stats({ entries }) {
 
   const faceRednessReasonStats = aggregateTextEntries(sortedEntries, 'faceRednessReason')
   const helpedOnePercentStats = aggregateTextEntries(sortedEntries, 'q1')
-  const needsStats = aggregateTextEntries(sortedEntries, 'q2')
+  const needsStats = aggregateNeedsEntries(sortedEntries)
 
   return (
     <div className="stats-block">

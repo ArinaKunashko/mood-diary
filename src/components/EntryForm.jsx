@@ -8,6 +8,7 @@ import {
   EMOTIONS,
   FACE_REDNESS_OPTIONS,
   HELPED_OPTIONS,
+  NEEDS_OPTIONS,
   SCALE_LABELS,
   SLEEP_LATENCY_OPTIONS
 } from '../data/options.js'
@@ -91,7 +92,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
         <textarea
           className="text-area other-input"
           rows={2}
-          placeholder="Сюжет или ощущение сна накануне: призраки, погоня, азарт, игра, страх..."
+          placeholder="Сюжет или ощущение сна накануне"
           value={entry.dreamContent}
           onChange={(e) => update({ dreamContent: e.target.value })}
         />
@@ -105,7 +106,6 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       <section className="form-section">
         <h3> Какие эмоции я сейчас испытываю?</h3>
         <MultiSelect
-          label="Можно отметить несколько"
           options={EMOTIONS}
           selected={entry.emotions}
           onToggle={(opt) => update({ emotions: toggleInArray(entry.emotions, opt) })}
@@ -193,7 +193,7 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
         <textarea
           className="text-area other-input"
           rows={2}
-          placeholder="С чем я это связываю? Например: разговор, стыд, встреча, усталость, жара..."
+          placeholder="С чем я это связываю?"
           value={entry.faceRednessReason}
           onChange={(e) => update({ faceRednessReason: e.target.value })}
         />
@@ -202,7 +202,6 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       <section className="form-section">
         <h3>Что происходит в теле?</h3>
         <MultiSelect
-          label="Можно отметить несколько"
           options={BODY_SIGNALS}
           selected={entry.body}
           onToggle={(opt) => update({ body: toggleInArray(entry.body, opt) })}
@@ -235,7 +234,6 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
       <section className="form-section">
         <h3>Что помогло?</h3>
         <MultiSelect
-          label="Можно отметить несколько"
           options={HELPED_OPTIONS}
           selected={entry.helped}
           onToggle={(opt) => update({ helped: toggleInArray(entry.helped, opt) })}
@@ -264,47 +262,49 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
         />
       </section>
 
-      <section className="form-section reflection">
-        <h3>💛 Небольшое обращение к себе</h3>
-        <label className="stacked-field">
-          Что сегодня помогло мне хотя бы на 1%?
-          <textarea
-            className="text-area"
-            rows={2}
-            value={entry.q1}
-            onChange={(e) => update({ q1: e.target.value })}
-          />
-        </label>
-        <label className="stacked-field">
-          Что сейчас мне нужнее всего?
-          <textarea
-            className="text-area"
-            rows={2}
-            value={entry.q2}
-            onChange={(e) => update({ q2: e.target.value })}
-          />
-        </label>
-        <label className="stacked-field">
-          Что я могу сделать для себя в ближайший час?
-          <textarea
-            className="text-area"
-            rows={2}
-            value={entry.q3}
-            onChange={(e) => update({ q3: e.target.value })}
-          />
-        </label>
-      </section>
+        <section className="form-section reflection">
+            <h3>💛 Небольшое обращение к себе</h3>
+            <div className="stacked-field">
+                <span>Что сейчас мне нужнее всего?</span>
+                <MultiSelect
+                    options={NEEDS_OPTIONS}
+                    selected={entry.needs || []}
+                    onToggle={(opt) => update({needs: toggleInArray(entry.needs || [], opt)})}
+                    otherValue={entry.needsOther ?? entry.q2}
+                    onOtherChange={(v) => update({needsOther: v, q2: v})}
+                />
+            </div>
+            <label className="stacked-field">
+                Что сегодня помогло мне хотя бы на 1%?
+                <textarea
+                    className="text-area"
+                    rows={2}
+                    value={entry.q1}
+                    onChange={(e) => update({q1: e.target.value})}
+                />
+            </label>
 
-      <div className="form-actions">
-        {onCancel && (
-          <button type="button" className="btn btn-ghost" onClick={onCancel}>
-            Отмена
-          </button>
-        )}
-        <button type="submit" className="btn btn-primary" disabled={isSaving}>
-          {isSaving ? 'Сохраняю...' : 'Сохранить запись'}
-        </button>
-      </div>
+            <label className="stacked-field">
+                Что я могу сделать для себя в ближайший час?
+                <textarea
+                    className="text-area"
+                    rows={2}
+                    value={entry.q3}
+                    onChange={(e) => update({q3: e.target.value})}
+                />
+            </label>
+        </section>
+
+        <div className="form-actions">
+            {onCancel && (
+                <button type="button" className="btn btn-ghost" onClick={onCancel}>
+                    Отмена
+                </button>
+            )}
+            <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                {isSaving ? 'Сохраняю...' : 'Сохранить запись'}
+            </button>
+        </div>
     </form>
   )
 }
