@@ -105,10 +105,34 @@ button {
 }
 
 .app-footer {
-  text-align: center;
-  padding: 20px;
-  font-size: 0.8rem;
+  padding: 24px 20px 32px;
+}
+
+.footer-quote {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 18px 22px;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
   color: var(--color-text-soft);
+  text-align: center;
+}
+
+.footer-quote p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-text-soft);
+}
+
+.footer-quote cite {
+  display: block;
+  margin-top: 10px;
+  color: var(--color-sage-dark);
+  font-size: 0.78rem;
+  font-style: normal;
+  letter-spacing: 0.02em;
 }
 
 /* PIN */
