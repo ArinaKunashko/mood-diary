@@ -17,8 +17,32 @@ function toggleInArray(arr, value) {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
 }
 
-export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = false }) {
+function parseDate(date) {
+  return new Date(`${date}T00:00:00`)
+}
+
+function getCycleHint(entries, currentEntry) {
+  if (!currentEntry.date) return null
+
+  const currentDate = parseDate(currentEntry.date)
+  const previousEntry = [...entries]
+    .filter((entry) => entry.id !== currentEntry.id && entry.cycleDay && entry.date && parseDate(entry.date) < currentDate)
+    .sort((a, b) => parseDate(b.date) - parseDate(a.date))[0]
+
+  if (!previousEntry) return null
+
+  const previousCycleDay = Number(previousEntry.cycleDay)
+  if (!Number.isFinite(previousCycleDay)) return null
+
+  const daysDiff = Math.max(1, Math.round((currentDate - parseDate(previousEntry.date)) / 86400000))
+  const suggestedDay = previousCycleDay + daysDiff
+
+  return `В прошлой записи был ${previousCycleDay} день. Сейчас примерно ${suggestedDay}.`
+}
+
+export default function EntryForm({ initialEntry, entries = [], onSave, onCancel, isSaving = false }) {
   const [entry, setEntry] = useState(initialEntry)
+  const cycleHint = getCycleHint(entries, entry)
 
   const update = (patch) => setEntry((prev) => ({ ...prev, ...patch }))
 
@@ -40,7 +64,19 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
           />
         </label>
         <label className="date-field">
-          День цикла
+          <span className="label-with-help">
+            День цикла
+            {cycleHint && (
+              <button
+                type="button"
+                className="field-help"
+                data-tooltip={cycleHint}
+                aria-label={cycleHint}
+              >
+                ?
+              </button>
+            )}
+          </span>
           <input
             type="number"
             min="1"
@@ -89,6 +125,20 @@ export default function EntryForm({ initialEntry, onSave, onCancel, isSaving = f
             </button>
           ))}
         </div>
+        <label className="stacked-field sleep-hours-field">
+          Сколько часов я спала?
+          <input
+            type="number"
+            min="0"
+            max="16"
+            step="0.5"
+            inputMode="decimal"
+            className="text-input"
+            placeholder="например, 7.5"
+            value={entry.sleepHours ?? ''}
+            onChange={(e) => update({ sleepHours: e.target.value })}
+          />
+        </label>
         <textarea
           className="text-area other-input"
           rows={2}

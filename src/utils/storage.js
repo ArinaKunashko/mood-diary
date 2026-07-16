@@ -149,6 +149,7 @@ export function makeEmptyEntry() {
     crying: '',
     dreamQuality: '',
     sleepLatency: '',
+    sleepHours: '',
     dreamContent: '',
     faceRedness: '',
     faceRednessReason: '',

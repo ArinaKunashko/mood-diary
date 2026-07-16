@@ -45,10 +45,12 @@ function dateInfo(date) {
   const value = new Date(date)
   const shortDate = value.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
   const weekday = value.toLocaleDateString('ru-RU', { weekday: 'long' })
+  const shortWeekday = value.toLocaleDateString('ru-RU', { weekday: 'short' }).replace('.', '')
 
   return {
     shortDate,
     weekday,
+    shortWeekday,
     fullLabel: `${weekday}, ${shortDate}`
   }
 }
@@ -301,7 +303,7 @@ export default function Stats({ entries }) {
     return {
       date: date.shortDate,
       dateLabel: date.fullLabel,
-      weekday: date.weekday,
+      weekday: date.shortWeekday,
       cycleLabel: cycleLabel(e),
       Тревога: e.anxiety
     }
@@ -312,7 +314,7 @@ export default function Stats({ entries }) {
     return {
       date: date.shortDate,
       dateLabel: date.fullLabel,
-      weekday: date.weekday,
+      weekday: date.shortWeekday,
       cycleLabel: cycleLabel(e),
       Энергия: e.energy
     }
@@ -323,7 +325,7 @@ export default function Stats({ entries }) {
     return {
       date: date.shortDate,
       dateLabel: date.fullLabel,
-      weekday: date.weekday,
+      weekday: date.shortWeekday,
       cycleLabel: cycleLabel(e),
       Настроение: moodScore(e)
     }
@@ -334,7 +336,7 @@ export default function Stats({ entries }) {
     return {
       date: date.shortDate,
       dateLabel: date.fullLabel,
-      weekday: date.weekday,
+      weekday: date.shortWeekday,
       cycleLabel: cycleLabel(e),
       'Покраснение лица': FACE_REDNESS_LEVEL[e.faceRedness] ?? null,
       description: e.faceRedness || 'не указано'
@@ -346,7 +348,7 @@ export default function Stats({ entries }) {
     return {
       date: date.shortDate,
       dateLabel: date.fullLabel,
-      weekday: date.weekday,
+      weekday: date.shortWeekday,
       cycleLabel: cycleLabel(e),
       'Тревожность сна': DREAM_LEVEL[e.dreamQuality] ?? null,
       description: e.dreamQuality || 'не указано',
@@ -359,10 +361,21 @@ export default function Stats({ entries }) {
     return {
       date: date.shortDate,
       dateLabel: date.fullLabel,
-      weekday: date.weekday,
+      weekday: date.shortWeekday,
       cycleLabel: cycleLabel(e),
       level: SLEEP_LATENCY_LEVEL[e.sleepLatency] ?? null,
       description: e.sleepLatency || 'не указано'
+    }
+  })
+
+  const sleepHoursData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.shortWeekday,
+      cycleLabel: cycleLabel(e),
+      'Часы сна': numberOrNull(e.sleepHours)
     }
   })
 
@@ -371,7 +384,7 @@ export default function Stats({ entries }) {
     return {
       date: date.shortDate,
       dateLabel: date.fullLabel,
-      weekday: date.weekday,
+      weekday: date.shortWeekday,
       cycleLabel: cycleLabel(e),
       Плач: CRYING_LEVEL[e.crying] ?? null,
       description: e.crying || 'не указано',
@@ -421,190 +434,208 @@ export default function Stats({ entries }) {
       )}
 
       {sortedEntries.length > 0 && (
-        <>
-      <h3>Тревога</h3>
-      <p className="section-hint">Шкала 0–5: чем выше значение, тем сильнее тревога.</p>
-      <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={anxietyData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12} />
-            <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12} />
-            <Tooltip content={<PrettyTooltip />} />
-            <Line type="monotone" dataKey="Тревога" stroke="#A08CB3" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+          <>
+            <h3 style={{marginTop: 8}}>Сон</h3>
+            <p className="section-hint">
+              Цветная лента показывает ощущение сна по дням. Сюжет сна остаётся в подсказке.
+            </p>
+            <div className="symptom-strip">
+              {dreamData.map((entry, index) => {
+                const level = entry['Тревожность сна']
+                const background =
+                    level === 0 ? DREAM_COLORS.calm : level === 1 ? DREAM_COLORS.anxious : DREAM_COLORS.unknown
+                return (
+                    <SymptomCell
+                        key={`${entry.date}-${index}`}
+                        color={background}
+                        date={entry.date}
+                        weekday={entry.weekday}
+                        tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}${entry.dreamContent ? `: ${entry.dreamContent}` : ''}`}
+                    />
+                )
+              })}
+            </div>
+            <div className="symptom-legend">
+              <span><i style={{background: DREAM_COLORS.calm}}/>Не тревожный сон</span>
+              <span><i style={{background: DREAM_COLORS.anxious}}/>Тревожный сон</span>
+              <span><i style={{background: DREAM_COLORS.unknown}}/>Не помню</span>
+            </div>
 
-      <h3 style={{ marginTop: 28 }}>Энергия</h3>
-      <p className="section-hint">Шкала 0–5: чем выше значение, тем больше ресурса.</p>
-      <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={energyData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12} />
-            <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12} />
-            <Tooltip content={<PrettyTooltip />} />
-            <Line type="monotone" dataKey="Энергия" stroke="#7C9885" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
 
-      <h3 style={{ marginTop: 28 }}>Настроение (знак + сила эмоций)</h3>
-      <p className="section-hint">
-        Не путать с «Силой эмоций» выше: здесь учитывается ещё и знак — позитивные эмоции
-        дают плюс, негативные — минус. От −5 (сильный минус) до +5 (сильный плюс).
-      </p>
-      <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={moodData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12} />
-            <YAxis domain={[-5, 5]} stroke="var(--color-text-soft)" fontSize={12} />
-            <ReferenceLine y={0} stroke="var(--color-border)" />
-            <Tooltip content={<PrettyTooltip />} />
-            <Line type="monotone" dataKey="Настроение" stroke="#7C9885" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      <h3 style={{ marginTop: 28 }}>Сон</h3>
-      <p className="section-hint">
-        Цветная лента показывает ощущение сна по дням. Сюжет сна остаётся в подсказке.
-      </p>
-      <div className="symptom-strip">
-        {dreamData.map((entry, index) => {
-          const level = entry['Тревожность сна']
-          const background =
-            level === 0 ? DREAM_COLORS.calm : level === 1 ? DREAM_COLORS.anxious : DREAM_COLORS.unknown
-          return (
-            <SymptomCell
-              key={`${entry.date}-${index}`}
-              color={background}
-              date={entry.date}
-              weekday={entry.weekday}
-              tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}${entry.dreamContent ? `: ${entry.dreamContent}` : ''}`}
-            />
-          )
-        })}
-      </div>
-      <div className="symptom-legend">
-        <span><i style={{ background: DREAM_COLORS.calm }} />Не тревожный сон</span>
-        <span><i style={{ background: DREAM_COLORS.anxious }} />Тревожный сон</span>
-        <span><i style={{ background: DREAM_COLORS.unknown }} />Не помню</span>
-      </div>
-
-      <h3 style={{ marginTop: 28 }}>Засыпание</h3>
-      <p className="section-hint">
-        Лента показывает, насколько быстро получилось уснуть.
-      </p>
-      <div className="symptom-strip">
-        {sleepLatencyData.map((entry, index) => {
-          const background = entry.level === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[entry.level]
-          return (
-            <SymptomCell
-              key={`${entry.date}-${index}`}
-              color={background}
-              date={entry.date}
-              weekday={entry.weekday}
-              tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
-            />
-          )
-        })}
-      </div>
-      <div className="symptom-legend">
-        {SLEEP_LATENCY_OPTIONS.map((label) => (
-          <span key={label}>
-            <i style={{ background: SLEEP_LATENCY_LEVEL[label] === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[SLEEP_LATENCY_LEVEL[label]] }} />
-            {label}
+            <h3 style={{marginTop: 28}}>Засыпание</h3>
+            <p className="section-hint">
+              Лента показывает, насколько быстро получилось уснуть.
+            </p>
+            <div className="symptom-strip">
+              {sleepLatencyData.map((entry, index) => {
+                const background = entry.level === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[entry.level]
+                return (
+                    <SymptomCell
+                        key={`${entry.date}-${index}`}
+                        color={background}
+                        date={entry.date}
+                        weekday={entry.weekday}
+                        tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
+                    />
+                )
+              })}
+            </div>
+            <div className="symptom-legend">
+              {SLEEP_LATENCY_OPTIONS.map((label) => (
+                  <span key={label}>
+            <i style={{background: SLEEP_LATENCY_LEVEL[label] === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[SLEEP_LATENCY_LEVEL[label]]}}/>
+                    {label}
           </span>
-        ))}
-      </div>
-
-      <h3 style={{ marginTop: 28 }}>Покраснение лица</h3>
-      <p className="section-hint">
-        Лента показывает степень и характер покраснения по дням: от светлого “не краснело” до насыщенного “краснело, зудело и болело”.
-      </p>
-      <div className="symptom-strip">
-        {faceRednessData.map((entry, index) => {
-          const level = entry['Покраснение лица']
-          const background = level === null ? '#F0EDE6' : FACE_REDNESS_COLORS[level]
-          return (
-            <SymptomCell
-              key={`${entry.date}-${index}`}
-              color={background}
-              date={entry.date}
-              weekday={entry.weekday}
-              tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
-            />
-          )
-        })}
-      </div>
-      <div className="symptom-legend">
-        {[
-          'Не краснело',
-          'Немного краснело',
-          'Краснело сильно',
-          'Краснело и зудело',
-          'Краснело и болело',
-          'Краснело, зудело и болело'
-        ].map((label) => (
-          <span key={label}>
-            <i style={{ background: FACE_REDNESS_COLORS[FACE_REDNESS_LEVEL[label]] }} />
-            {label}
-          </span>
-        ))}
-      </div>
-
-      <h3 style={{ marginTop: 28 }}>Плач по дням</h3>
-      <p className="section-hint">
-        0 — не плакала, 1 — хотелось плакать, 2 — немного, 3 — долго, 4 — не могла остановиться.
-      </p>
-      <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={cryingData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12} />
-            <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} stroke="var(--color-text-soft)" fontSize={12} />
-            <Tooltip content={<PrettyTooltip type="description" />} cursor={{ fill: 'rgba(124, 152, 133, 0.08)' }} />
-            <Bar dataKey="Плач" radius={[6, 6, 0, 0]} minPointSize={4}>
-              {cryingData.map((entry, index) => (
-                <Cell key={`${entry.date}-${index}`} fill={entry.color} />
               ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="symptom-legend">
-        {['Не плакала', 'Хотелось плакать', 'Немного плакала', 'Долго плакала', 'Не могла остановиться'].map((label) => (
-          <span key={label}>
-            <i style={{ background: CRYING_COLORS[CRYING_LEVEL[label]] }} />
-            {label}
+            </div>
+
+            <h3 style={{marginTop: 28}}>Часы сна</h3>
+            <p className="section-hint">Сколько часов получилось поспать ночью накануне.</p>
+            <div className="chart-wrap">
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={sleepHoursData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                  <YAxis domain={[0, 12]} stroke="var(--color-text-soft)" fontSize={12}/>
+                  <Tooltip content={<PrettyTooltip/>}/>
+                  <Line type="monotone" dataKey="Часы сна" stroke="#D98B7A" strokeWidth={2} dot={{r: 3}} connectNulls/>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <h3 style={{marginTop: 28}}>Энергия</h3>
+            <p className="section-hint">Шкала 0–5: чем выше значение, тем больше ресурса.</p>
+            <div className="chart-wrap">
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={energyData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                  <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
+                  <Tooltip content={<PrettyTooltip/>}/>
+                  <Line type="monotone" dataKey="Энергия" stroke="#7C9885" strokeWidth={2} dot={{r: 3}} connectNulls/>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <h3 style={{marginTop: 28}}>Тревога</h3>
+            <p className="section-hint">Шкала 0–5: чем выше значение, тем сильнее тревога.</p>
+            <div className="chart-wrap">
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={anxietyData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                  <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
+                  <Tooltip content={<PrettyTooltip/>}/>
+                  <Line type="monotone" dataKey="Тревога" stroke="#A08CB3" strokeWidth={2} dot={{r: 3}} connectNulls/>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <h3 style={{marginTop: 28}}>Настроение (знак + сила эмоций)</h3>
+            <p className="section-hint">
+              Не путать с «Силой эмоций» выше: здесь учитывается ещё и знак — позитивные эмоции
+              дают плюс, негативные — минус. От −5 (сильный минус) до +5 (сильный плюс).
+            </p>
+            <div className="chart-wrap">
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={moodData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                  <YAxis domain={[-5, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
+                  <ReferenceLine y={0} stroke="var(--color-border)"/>
+                  <Tooltip content={<PrettyTooltip/>}/>
+                  <Line type="monotone" dataKey="Настроение" stroke="#7C9885" strokeWidth={2} dot={{r: 3}}
+                        connectNulls/>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+
+            <h3 style={{marginTop: 28}}>Покраснение лица</h3>
+            <p className="section-hint">
+              Лента показывает степень и характер покраснения по дням: от светлого “не краснело” до насыщенного
+              “краснело, зудело и болело”.
+            </p>
+            <div className="symptom-strip">
+              {faceRednessData.map((entry, index) => {
+                const level = entry['Покраснение лица']
+                const background = level === null ? '#F0EDE6' : FACE_REDNESS_COLORS[level]
+                return (
+                    <SymptomCell
+                        key={`${entry.date}-${index}`}
+                        color={background}
+                        date={entry.date}
+                        weekday={entry.weekday}
+                        tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
+                    />
+                )
+              })}
+            </div>
+            <div className="symptom-legend">
+              {[
+                'Не краснело',
+                'Немного краснело',
+                'Краснело сильно',
+                'Краснело и зудело',
+                'Краснело и болело',
+                'Краснело, зудело и болело'
+              ].map((label) => (
+                  <span key={label}>
+            <i style={{background: FACE_REDNESS_COLORS[FACE_REDNESS_LEVEL[label]]}}/>
+                    {label}
           </span>
-        ))}
-      </div>
+              ))}
+            </div>
 
-      <TextInsightList
-        title="Возможные причины покраснения"
-        hint="Повторяющиеся ответы из поля «С чем я это связываю?»."
-        items={faceRednessReasonStats}
-        emptyText="Пока нет заполненных причин покраснения."
-      />
+            <h3 style={{marginTop: 28}}>Плач по дням</h3>
+            <p className="section-hint">
+              0 — не плакала, 1 — хотелось плакать, 2 — немного, 3 — долго, 4 — не могла остановиться.
+            </p>
+            <div className="chart-wrap">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={cryingData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                  <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} stroke="var(--color-text-soft)" fontSize={12}/>
+                  <Tooltip content={<PrettyTooltip type="description"/>} cursor={{fill: 'rgba(124, 152, 133, 0.08)'}}/>
+                  <Bar dataKey="Плач" radius={[6, 6, 0, 0]} minPointSize={4}>
+                    {cryingData.map((entry, index) => (
+                        <Cell key={`${entry.date}-${index}`} fill={entry.color}/>
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="symptom-legend">
+              {['Не плакала', 'Хотелось плакать', 'Немного плакала', 'Долго плакала', 'Не могла остановиться'].map((label) => (
+                  <span key={label}>
+            <i style={{background: CRYING_COLORS[CRYING_LEVEL[label]]}}/>
+                    {label}
+          </span>
+              ))}
+            </div>
 
-      <TextInsightList
-        title="Что помогло хотя бы на 1%"
-        hint="Повторяющиеся ответы из обращения к себе."
-        items={helpedOnePercentStats}
-        emptyText="Пока нет заполненных ответов про то, что помогло."
-      />
+            <TextInsightList
+                title="Возможные причины покраснения"
+                hint="Повторяющиеся ответы из поля «С чем я это связываю?»."
+                items={faceRednessReasonStats}
+                emptyText="Пока нет заполненных причин покраснения."
+            />
 
-      <TextInsightList
-        title="Что сейчас нужнее всего"
-        hint="Повторяющиеся потребности, которые можно обсудить и отследить."
-        items={needsStats}
-        emptyText="Пока нет заполненных ответов про потребности."
-      />
-        </>
+            <TextInsightList
+                title="Что помогло хотя бы на 1%"
+                hint="Повторяющиеся ответы из обращения к себе."
+                items={helpedOnePercentStats}
+                emptyText="Пока нет заполненных ответов про то, что помогло."
+            />
+
+            <TextInsightList
+                title="Что сейчас нужнее всего"
+                hint="Повторяющиеся потребности, которые можно обсудить и отследить."
+                items={needsStats}
+                emptyText="Пока нет заполненных ответов про потребности."
+            />
+          </>
       )}
     </div>
   )

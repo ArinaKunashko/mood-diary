@@ -187,6 +187,7 @@ export default function App() {
           <EntryForm
             key="new-form"
             initialEntry={draft}
+            entries={entries}
             onSave={handleSaveNew}
             isSaving={isSaving}
           />
@@ -220,6 +221,7 @@ export default function App() {
           <EntryForm
             key={editingEntry.id}
             initialEntry={editingEntry}
+            entries={entries}
             onSave={handleSaveEdit}
             onCancel={() => setEditingEntry(null)}
             isSaving={isSaving}
