@@ -175,6 +175,7 @@ function aggregateNeedsEntries(entries) {
 const CRYING_COLORS = ['#E8E2D6', '#CBD6D0', '#A9C2B6', '#7C9885', '#5F7A68']
 const DREAM_COLORS = {
   calm: '#7C9885',
+  uneasy: '#D6A65F',
   anxious: '#A08CB3',
   unknown: '#F0EDE6'
 }
@@ -443,7 +444,13 @@ export default function Stats({ entries }) {
               {dreamData.map((entry, index) => {
                 const level = entry['Тревожность сна']
                 const background =
-                    level === 0 ? DREAM_COLORS.calm : level === 1 ? DREAM_COLORS.anxious : DREAM_COLORS.unknown
+                    level === 0
+                      ? DREAM_COLORS.calm
+                      : level === 0.5
+                        ? DREAM_COLORS.uneasy
+                        : level === 1
+                          ? DREAM_COLORS.anxious
+                          : DREAM_COLORS.unknown
                 return (
                     <SymptomCell
                         key={`${entry.date}-${index}`}
@@ -457,6 +464,7 @@ export default function Stats({ entries }) {
             </div>
             <div className="symptom-legend">
               <span><i style={{background: DREAM_COLORS.calm}}/>Не тревожный сон</span>
+              <span><i style={{background: DREAM_COLORS.uneasy}}/>Беспокойный сон</span>
               <span><i style={{background: DREAM_COLORS.anxious}}/>Тревожный сон</span>
               <span><i style={{background: DREAM_COLORS.unknown}}/>Не помню</span>
             </div>

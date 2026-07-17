@@ -96,7 +96,7 @@ export default function EntryForm({ initialEntry, entries = [], onSave, onCancel
       <section className="form-section">
         <h3>Сон накануне</h3>
         <p className="section-hint">
-          Ощущение сна: страшный сюжет может быть не тревожным.
+          Ощущение сна: страшный сюжет может быть не тревожным, а напряженный сон может быть просто беспокойным.
         </p>
         <div className="pill-row">
           {DREAM_OPTIONS.map((opt) => (
