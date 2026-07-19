@@ -1,11 +1,12 @@
 export default function ScaleSlider({ label, value, onChange, max = 5, labels }) {
   const steps = Array.from({ length: max + 1 }, (_, i) => i)
+  const hasValue = value !== null && value !== undefined
 
   return (
     <div className="field">
       <div className="field-label">
         <span>{label}</span>
-        <span className="field-score">{value === null ? '—' : `${value} / ${max}`}</span>
+        <span className="field-score">{hasValue ? `${value} / ${max}` : '—'}</span>
       </div>
       <div className="scale-row">
         {steps.map((n) => (
@@ -21,7 +22,7 @@ export default function ScaleSlider({ label, value, onChange, max = 5, labels })
           </button>
         ))}
       </div>
-      {labels && value !== null && <p className="field-hint">{labels[value]}</p>}
+      {labels && hasValue && <p className="field-hint">{labels[value]}</p>}
     </div>
   )
 }

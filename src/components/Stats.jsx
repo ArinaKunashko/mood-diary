@@ -6,7 +6,6 @@ import {
   Cell,
   Line,
   LineChart,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,20 +14,10 @@ import {
 import {
   CRYING_LEVEL,
   DREAM_LEVEL,
-  EMOTION_VALENCE,
   FACE_REDNESS_LEVEL,
   SLEEP_LATENCY_LEVEL,
   SLEEP_LATENCY_OPTIONS
 } from '../data/options.js'
-
-// Настроение = средний знак выбранных эмоций (от -1 до 1) * сила эмоций (0-5).
-// Получается число от -5 (сильные негативные эмоции) до +5 (сильные позитивные).
-function moodScore(entry) {
-  if (!entry.emotions || entry.emotions.length === 0 || entry.intensity === null) return null
-  const avgValence =
-    entry.emotions.reduce((sum, e) => sum + (EMOTION_VALENCE[e] ?? 0), 0) / entry.emotions.length
-  return Math.round(avgValence * entry.intensity * 10) / 10
-}
 
 function numberOrNull(value) {
   if (value === '' || value === null || value === undefined) return null
@@ -235,31 +224,95 @@ function SymptomCell({ color, date, weekday, tooltip }) {
   )
 }
 
-function TextInsightList({ title, hint, items, emptyText }) {
+function TextInsightList({ title, hint, items, emptyText, collapsible = false, defaultOpen = true }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
+  const totalCount = items.reduce((sum, item) => sum + item.count, 0)
+  const contentId = `insight-${title.toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-')}`
+
   return (
-    <div className="text-insight-block">
-      <h3>{title}</h3>
+    <div className={`text-insight-block ${collapsible ? 'is-collapsible' : ''}`}>
+      <div className="text-insight-heading">
+        <h3>{title}</h3>
+        {collapsible && (
+          <button
+            type="button"
+            className="text-insight-toggle"
+            onClick={() => setIsOpen((current) => !current)}
+            aria-expanded={isOpen}
+            aria-controls={contentId}
+          >
+            <span>{items.length ? `${items.length} вариантов · ${totalCount} раз` : 'пусто'}</span>
+            <i aria-hidden="true">{isOpen ? 'Свернуть' : 'Раскрыть'}</i>
+          </button>
+        )}
+      </div>
       <p className="section-hint">{hint}</p>
-      {items.length === 0 ? (
-        <p className="text-insight-empty">{emptyText}</p>
-      ) : (
-        <ul className="text-insight-list">
-          {items.map((item) => (
-            <li key={item.text} className="text-insight-item">
-              <div>
-                <strong>{item.text}</strong>
-                <span>{item.dates.join(' · ')}</span>
-              </div>
-              <em>{item.count}</em>
-            </li>
-          ))}
-        </ul>
+      {isOpen && (
+        <div id={contentId}>
+          {items.length === 0 ? (
+            <p className="text-insight-empty">{emptyText}</p>
+          ) : (
+            <ul className="text-insight-list">
+              {items.map((item) => (
+                <li key={item.text} className="text-insight-item">
+                  <div>
+                    <strong>{item.text}</strong>
+                    <span>{item.dates.join(' · ')}</span>
+                  </div>
+                  <em>{item.count}</em>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   )
 }
 
-export default function Stats({ entries }) {
+function formatTreatmentDate(dateStr) {
+  const date = new Date(`${dateStr}T00:00:00`)
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function TreatmentSummary({ records }) {
+  if (!records || records.length === 0) return null
+
+  const sortedRecords = [...records].sort((a, b) => new Date(a.date) - new Date(b.date))
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const medicationRecords = sortedRecords.filter((record) => record.medication && new Date(`${record.date}T00:00:00`) <= today)
+  const currentMedication = medicationRecords.at(-1)
+  const nextAppointment = sortedRecords.find((record) => record.kind === 'psychiatrist' && record.planned && new Date(`${record.date}T00:00:00`) >= today)
+
+  return (
+    <div className="treatment-summary">
+      <div className="treatment-summary-main">
+        <span>Лечение</span>
+        {currentMedication ? (
+          <strong>{[currentMedication.medication, currentMedication.dosage].filter(Boolean).join(' · ')}</strong>
+        ) : (
+          <strong>Данные о лекарствах не указаны</strong>
+        )}
+        {nextAppointment && (
+          <em>Следующий прием: {formatTreatmentDate(nextAppointment.date)}</em>
+        )}
+      </div>
+      <div className="treatment-summary-timeline">
+        {sortedRecords.filter((record) => record.kind === 'psychiatrist').slice(-5).map((record) => (
+          <div key={record.id} className={record.planned ? 'is-planned' : ''}>
+            <span>{formatTreatmentDate(record.date)}</span>
+            <strong>{record.title}</strong>
+            {(record.medication || record.dosage) && <em>{[record.medication, record.dosage].filter(Boolean).join(' · ')}</em>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export default function Stats({ entries, treatmentRecords = [] }) {
   const latestEntryDate = entries.length
     ? parseEntryDate([...entries].sort((a, b) => parseEntryDate(a.date) - parseEntryDate(b.date)).at(-1).date)
     : new Date()
@@ -328,7 +381,8 @@ export default function Stats({ entries }) {
       dateLabel: date.fullLabel,
       weekday: date.shortWeekday,
       cycleLabel: cycleLabel(e),
-      Настроение: moodScore(e)
+      'Утро': numberOrNull(e.morningMood),
+      'Вечер': numberOrNull(e.eveningMood)
     }
   })
 
@@ -426,6 +480,8 @@ export default function Stats({ entries }) {
           </button>
         </div>
       </div>
+
+      <TreatmentSummary records={treatmentRecords} />
 
       {sortedEntries.length === 0 && (
         <div className="empty-state stats-empty-period">
@@ -539,21 +595,19 @@ export default function Stats({ entries }) {
               </ResponsiveContainer>
             </div>
 
-            <h3 style={{marginTop: 28}}>Настроение (знак + сила эмоций)</h3>
+            <h3 style={{marginTop: 28}}>Настроение</h3>
             <p className="section-hint">
-              Не путать с «Силой эмоций» выше: здесь учитывается ещё и знак — позитивные эмоции
-              дают плюс, негативные — минус. От −5 (сильный минус) до +5 (сильный плюс).
+              Шкала 0–5: две линии показывают общий фон утром и вечером.
             </p>
             <div className="chart-wrap">
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={moodData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                   <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
-                  <YAxis domain={[-5, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
-                  <ReferenceLine y={0} stroke="var(--color-border)"/>
+                  <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
                   <Tooltip content={<PrettyTooltip/>}/>
-                  <Line type="monotone" dataKey="Настроение" stroke="#7C9885" strokeWidth={2} dot={{r: 3}}
-                        connectNulls/>
+                  <Line type="monotone" dataKey="Утро" stroke="#D6A65F" strokeWidth={2} dot={{r: 3}} connectNulls/>
+                  <Line type="monotone" dataKey="Вечер" stroke="#7C9885" strokeWidth={2} dot={{r: 3}} connectNulls/>
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -635,6 +689,8 @@ export default function Stats({ entries }) {
                 hint="Повторяющиеся ответы из обращения к себе."
                 items={helpedOnePercentStats}
                 emptyText="Пока нет заполненных ответов про то, что помогло."
+                collapsible
+                defaultOpen={false}
             />
 
             <TextInsightList
@@ -642,6 +698,8 @@ export default function Stats({ entries }) {
                 hint="Повторяющиеся потребности, которые можно обсудить и отследить."
                 items={needsStats}
                 emptyText="Пока нет заполненных ответов про потребности."
+                collapsible
+                defaultOpen={false}
             />
           </>
       )}

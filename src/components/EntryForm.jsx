@@ -94,6 +94,16 @@ export default function EntryForm({ initialEntry, entries = [], onSave, onCancel
       </div>
 
       <section className="form-section">
+        <h3>Настроение утром</h3>
+        <ScaleSlider
+          label="Общий фон после сна"
+          value={entry.morningMood}
+          onChange={(v) => update({ morningMood: v })}
+          labels={SCALE_LABELS.mood}
+        />
+      </section>
+
+      <section className="form-section">
         <h3>Сон накануне</h3>
         <p className="section-hint">
           Ощущение сна: страшный сюжет может быть не тревожным, а напряженный сон может быть просто беспокойным.
@@ -152,6 +162,16 @@ export default function EntryForm({ initialEntry, entries = [], onSave, onCancel
         <span>Вечер</span>
         <p>Про состояние в течение дня и то, как я себя чувствую сейчас.</p>
       </div>
+
+      <section className="form-section">
+        <h3>Настроение вечером</h3>
+        <ScaleSlider
+          label="Общий фон сейчас"
+          value={entry.eveningMood}
+          onChange={(v) => update({ eveningMood: v })}
+          labels={SCALE_LABELS.mood}
+        />
+      </section>
 
       <section className="form-section">
         <h3> Какие эмоции я сейчас испытываю?</h3>

@@ -8,6 +8,10 @@ function Row({ label, value }) {
   )
 }
 
+function scoreLabel(value, max = 5) {
+  return value === null || value === undefined ? null : `${value}/${max}`
+}
+
 function TagRow({ label, items }) {
   if (!items || items.length === 0) return null
   return (
@@ -38,6 +42,8 @@ export default function EntryDetail({ entry, onEdit, onClose }) {
 
       <TagRow label="Эмоции" items={entry.emotions} />
       <Row label="День цикла" value={entry.cycleDay ? `${entry.cycleDay} день` : null} />
+      <Row label="Настроение утром" value={scoreLabel(entry.morningMood)} />
+      <Row label="Настроение вечером" value={scoreLabel(entry.eveningMood)} />
       <Row label="Другие эмоции" value={entry.emotionOther} />
       <Row label="Сила эмоций" value={entry.intensity !== null ? `${entry.intensity}/5` : null} />
       <Row label="Тревога" value={entry.anxiety !== null ? `${entry.anxiety}/5` : null} />

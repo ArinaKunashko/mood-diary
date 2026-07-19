@@ -4,26 +4,35 @@ import EntryList from './components/EntryList.jsx'
 import EntryDetail from './components/EntryDetail.jsx'
 import PinGate, { clearSavedAccess, hasSavedAccess } from './components/PinGate.jsx'
 import Stats from './components/Stats.jsx'
+import TreatmentRecords from './components/TreatmentRecords.jsx'
 import {
   cacheEntries,
+  cacheTreatmentRecords,
   deleteEntry,
+  deleteTreatmentRecord,
+  DEFAULT_TREATMENT_RECORDS,
   exportEntriesAsJSON,
   loadCachedEntries,
+  loadCachedTreatmentRecords,
   loadEntries,
+  loadTreatmentRecords,
   makeEmptyEntry,
   migrateLocalEntriesToCloud,
-  saveEntry
+  saveEntry,
+  saveTreatmentRecord
 } from './utils/storage.js'
 
 const TABS = [
   { id: 'new', label: 'Новая запись' },
   { id: 'history', label: 'История' },
-  { id: 'stats', label: 'Статистика' }
+  { id: 'stats', label: 'Статистика' },
+  { id: 'treatment', label: 'Лечение' }
 ]
 
 export default function App() {
   const [isUnlocked, setIsUnlocked] = useState(() => hasSavedAccess())
   const [entries, setEntries] = useState([])
+  const [treatmentRecords, setTreatmentRecords] = useState([])
   const [tab, setTab] = useState('new')
   const [draft, setDraft] = useState(() => makeEmptyEntry())
   const [selectedEntry, setSelectedEntry] = useState(null)
@@ -40,12 +49,22 @@ export default function App() {
       setIsLoading(true)
       setErrorMessage('')
       try {
-        const cloudEntries = await loadEntries()
+        const [cloudEntries, cloudTreatmentRecords] = await Promise.all([
+          loadEntries(),
+          loadTreatmentRecords()
+        ])
         const migratedEntries = await migrateLocalEntriesToCloud(cloudEntries)
         const nextEntries = [...cloudEntries, ...migratedEntries]
+        let nextTreatmentRecords = cloudTreatmentRecords
 
         setEntries(nextEntries)
         cacheEntries(nextEntries)
+        if (nextTreatmentRecords.length === 0) {
+          const seededRecords = await Promise.all(DEFAULT_TREATMENT_RECORDS.map(saveTreatmentRecord))
+          nextTreatmentRecords = seededRecords
+        }
+        setTreatmentRecords(nextTreatmentRecords)
+        cacheTreatmentRecords(nextTreatmentRecords)
         if (migratedEntries.length > 0) {
           setStatusMessage(`Перенесено в облако: ${migratedEntries.length} записей`)
         } else {
@@ -53,8 +72,10 @@ export default function App() {
         }
       } catch (e) {
         const cachedEntries = loadCachedEntries()
+        const cachedTreatmentRecords = loadCachedTreatmentRecords()
         if (cachedEntries.length > 0) {
           setEntries(cachedEntries)
+          setTreatmentRecords(cachedTreatmentRecords)
           setStatusMessage('Показаны записи из локального кэша. Когда интернет вернётся, дневник снова подключится к Supabase.')
           setErrorMessage(`Не удалось подключиться к Supabase: ${e.message}`)
         } else {
@@ -72,6 +93,7 @@ export default function App() {
     clearSavedAccess()
     setIsUnlocked(false)
     setEntries([])
+    setTreatmentRecords([])
     setSelectedEntry(null)
     setEditingEntry(null)
     setStatusMessage('')
@@ -135,6 +157,51 @@ export default function App() {
       setStatusMessage('Запись удалена из Supabase')
     } catch (e) {
       setErrorMessage(`Не удалось удалить запись: ${e.message}`)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const persistTreatmentRecord = async (record) => {
+    setIsSaving(true)
+    setErrorMessage('')
+
+    try {
+      const savedRecord = await saveTreatmentRecord(record)
+      setTreatmentRecords((current) => {
+        const exists = current.some((item) => item.id === savedRecord.id)
+        const nextRecords = exists
+          ? current.map((item) => (item.id === savedRecord.id ? savedRecord : item))
+          : [...current, savedRecord]
+        cacheTreatmentRecords(nextRecords)
+        return nextRecords
+      })
+      setStatusMessage('Запись лечения сохранена в Supabase')
+      return savedRecord
+    } catch (e) {
+      setErrorMessage(`Не удалось сохранить запись лечения: ${e.message}`)
+      return null
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDeleteTreatmentRecord = async (id) => {
+    if (!confirm('Удалить эту запись лечения?')) return
+
+    setIsSaving(true)
+    setErrorMessage('')
+
+    try {
+      await deleteTreatmentRecord(id)
+      setTreatmentRecords((current) => {
+        const nextRecords = current.filter((record) => record.id !== id)
+        cacheTreatmentRecords(nextRecords)
+        return nextRecords
+      })
+      setStatusMessage('Запись лечения удалена из Supabase')
+    } catch (e) {
+      setErrorMessage(`Не удалось удалить запись лечения: ${e.message}`)
     } finally {
       setIsSaving(false)
     }
@@ -228,7 +295,16 @@ export default function App() {
           />
         )}
 
-        {!isLoading && tab === 'stats' && <Stats entries={entries} />}
+        {!isLoading && tab === 'stats' && <Stats entries={entries} treatmentRecords={treatmentRecords} />}
+
+        {!isLoading && tab === 'treatment' && (
+          <TreatmentRecords
+            records={treatmentRecords}
+            onSave={persistTreatmentRecord}
+            onDelete={handleDeleteTreatmentRecord}
+            isSaving={isSaving}
+          />
+        )}
       </main>
 
       <footer className="app-footer">
