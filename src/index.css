@@ -331,7 +331,7 @@ button {
 .section-hint {
   font-size: 0.85rem;
   color: var(--color-text-soft);
-  margin: -6px 0 12px;
+  margin: 6px 0;
 }
 
 .subsection-title {
