@@ -275,6 +275,19 @@ function formatTreatmentDate(dateStr) {
   return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function medicationLabel(record) {
+  const medications = Array.isArray(record.medications) && record.medications.length > 0
+    ? record.medications
+    : record.medication || record.dosage
+      ? [{ name: record.medication || '', dosage: record.dosage || '' }]
+      : []
+
+  return medications
+    .map((item) => [item.name, item.dosage].filter(Boolean).join(' · '))
+    .filter(Boolean)
+    .join(', ')
+}
+
 function TreatmentSummary({ records }) {
   if (!records || records.length === 0) return null
 
@@ -282,7 +295,7 @@ function TreatmentSummary({ records }) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const medicationRecords = sortedRecords.filter((record) => record.medication && new Date(`${record.date}T00:00:00`) <= today)
+  const medicationRecords = sortedRecords.filter((record) => medicationLabel(record) && new Date(`${record.date}T00:00:00`) <= today)
   const currentMedication = medicationRecords.at(-1)
   const nextAppointment = sortedRecords.find((record) => record.kind === 'psychiatrist' && record.planned && new Date(`${record.date}T00:00:00`) >= today)
 
@@ -291,7 +304,7 @@ function TreatmentSummary({ records }) {
       <div className="treatment-summary-main">
         <span>Лечение</span>
         {currentMedication ? (
-          <strong>{[currentMedication.medication, currentMedication.dosage].filter(Boolean).join(' · ')}</strong>
+          <strong>{medicationLabel(currentMedication)}</strong>
         ) : (
           <strong>Данные о лекарствах не указаны</strong>
         )}
@@ -304,7 +317,7 @@ function TreatmentSummary({ records }) {
           <div key={record.id} className={record.planned ? 'is-planned' : ''}>
             <span>{formatTreatmentDate(record.date)}</span>
             <strong>{record.title}</strong>
-            {(record.medication || record.dosage) && <em>{[record.medication, record.dosage].filter(Boolean).join(' · ')}</em>}
+            {medicationLabel(record) && <em>{medicationLabel(record)}</em>}
           </div>
         ))}
       </div>

@@ -47,6 +47,16 @@ function normalizeTreatmentRecord(record) {
     : String(record.notes || '').trim()
       ? [String(record.notes).trim()]
       : []
+  const medications = Array.isArray(record.medications)
+    ? record.medications
+        .map((item) => ({
+          name: String(item.name || '').trim(),
+          dosage: String(item.dosage || '').trim()
+        }))
+        .filter((item) => item.name || item.dosage)
+    : record.medication || record.dosage
+      ? [{ name: record.medication || '', dosage: record.dosage || '' }]
+      : []
 
   return {
     ...record,
@@ -56,8 +66,9 @@ function normalizeTreatmentRecord(record) {
     kind,
     title: record.title || '',
     specialist: record.specialist || '',
-    medication: record.medication || '',
-    dosage: record.dosage || '',
+    medication: medications[0]?.name || '',
+    dosage: medications[0]?.dosage || '',
+    medications,
     notes: record.notes || '',
     notesList,
     followUp: record.followUp || '',

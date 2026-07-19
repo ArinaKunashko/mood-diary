@@ -20,6 +20,11 @@ function TreatmentForm({ initialRecord, onSave, onCancel, isSaving }) {
   const [record, setRecord] = useState(initialRecord)
   const isPsychiatrist = record.kind === 'psychiatrist'
   const notesList = Array.isArray(record.notesList) && record.notesList.length > 0 ? record.notesList : ['']
+  const medications = Array.isArray(record.medications) && record.medications.length > 0
+    ? record.medications
+    : record.medication || record.dosage
+      ? [{ name: record.medication || '', dosage: record.dosage || '' }]
+      : [{ name: '', dosage: '' }]
   const update = (patch) => setRecord((current) => ({ ...current, ...patch }))
   const updateNote = (index, value) => {
     update({ notesList: notesList.map((item, itemIndex) => itemIndex === index ? value : item) })
@@ -29,12 +34,30 @@ function TreatmentForm({ initialRecord, onSave, onCancel, isSaving }) {
     const nextNotes = notesList.filter((_, itemIndex) => itemIndex !== index)
     update({ notesList: nextNotes.length > 0 ? nextNotes : [''] })
   }
+  const updateMedication = (index, patch) => {
+    update({
+      medications: medications.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item)
+    })
+  }
+  const addMedication = () => update({ medications: [...medications, { name: '', dosage: '' }] })
+  const removeMedication = (index) => {
+    const nextMedications = medications.filter((_, itemIndex) => itemIndex !== index)
+    update({ medications: nextMedications.length > 0 ? nextMedications : [{ name: '', dosage: '' }] })
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault()
     const cleanNotesList = notesList.map((item) => item.trim()).filter(Boolean)
+    const cleanMedications = isPsychiatrist
+      ? medications
+          .map((item) => ({ name: item.name.trim(), dosage: item.dosage.trim() }))
+          .filter((item) => item.name || item.dosage)
+      : []
     onSave({
       ...record,
+      medications: cleanMedications,
+      medication: cleanMedications[0]?.name || '',
+      dosage: cleanMedications[0]?.dosage || '',
       notesList: cleanNotesList,
       notes: cleanNotesList.join('\n')
     })
@@ -65,7 +88,8 @@ function TreatmentForm({ initialRecord, onSave, onCancel, isSaving }) {
                 kind: nextKind,
                 specialist: nextKind === 'psychiatrist' ? 'Психиатр' : 'Психолог',
                 medication: nextKind === 'psychiatrist' ? record.medication : '',
-                dosage: nextKind === 'psychiatrist' ? record.dosage : ''
+                dosage: nextKind === 'psychiatrist' ? record.dosage : '',
+                medications: nextKind === 'psychiatrist' ? medications : []
               })
             }}
           >
@@ -89,22 +113,40 @@ function TreatmentForm({ initialRecord, onSave, onCancel, isSaving }) {
       </label>
 
       {isPsychiatrist && (
-        <label className="stacked-field">
-          Препарат и дозировка
-          <input
-            className="text-input"
-            type="text"
-            placeholder="Дулоксента, 60 мг"
-            value={[record.medication, record.dosage].filter(Boolean).join(', ')}
-            onChange={(event) => {
-              const [medication, ...dosageParts] = event.target.value.split(',')
-              update({
-                medication: medication.trim(),
-                dosage: dosageParts.join(',').trim()
-              })
-            }}
-          />
-        </label>
+        <div className="stacked-field">
+          <span>Препараты</span>
+          <div className="treatment-medications">
+            {medications.map((item, index) => (
+              <div key={index} className="treatment-medication-row">
+                <input
+                  className="text-input"
+                  type="text"
+                  placeholder="Дулоксента"
+                  value={item.name}
+                  onChange={(event) => updateMedication(index, { name: event.target.value })}
+                />
+                <input
+                  className="text-input"
+                  type="text"
+                  placeholder="60 мг"
+                  value={item.dosage}
+                  onChange={(event) => updateMedication(index, { dosage: event.target.value })}
+                />
+                <button
+                  type="button"
+                  className="treatment-point-remove"
+                  onClick={() => removeMedication(index)}
+                  aria-label="Удалить препарат"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+          <button type="button" className="btn btn-ghost btn-small treatment-point-add" onClick={addMedication}>
+            Добавить препарат
+          </button>
+        </div>
       )}
 
       <label className="stacked-field treatment-checkbox">
@@ -262,7 +304,15 @@ export default function TreatmentRecords({ records, onSave, onDelete, isSaving }
 
                     <div className="treatment-item-body">
                       <h3>{record.title}</h3>
-                      {(record.medication || record.dosage) && (
+                      {Array.isArray(record.medications) && record.medications.length > 0 ? (
+                          <div className="treatment-dose-list">
+                            {record.medications.map((item) => (
+                                <span key={`${item.name}-${item.dosage}`}>
+                                  {[item.name, item.dosage].filter(Boolean).join(' · ')}
+                                </span>
+                            ))}
+                          </div>
+                      ) : (record.medication || record.dosage) && (
                           <p className="treatment-dose">{[record.medication, record.dosage].filter(Boolean).join(' · ')}</p>
                       )}
                       {Array.isArray(record.notesList) && record.notesList.length > 0 ? (
