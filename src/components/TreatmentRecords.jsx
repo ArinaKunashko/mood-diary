@@ -232,7 +232,7 @@ export default function TreatmentRecords({ records, onSave, onDelete, isSaving }
 
       {!isAdding && !editingRecord && (
         <section className="treatment-group">
-          <p>{activeKind === 'psychiatrist' ? 'Приемы, назначения, препарат и дозировка.' : 'Сессии, главные мысли и follow up.'}</p>
+          <p>{activeKind === 'psychiatrist' ? 'Приемы, назначения, препарат и дозировка.' : 'Сессии и главные мысли.'}</p>
           {visibleRecords.length === 0 ? (
             <div className="treatment-empty">Пока нет записей {activeKindLabel}.</div>
           ) : (
