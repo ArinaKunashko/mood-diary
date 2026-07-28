@@ -5,20 +5,26 @@ import EntryDetail from './components/EntryDetail.jsx'
 import PinGate, { clearSavedAccess, hasSavedAccess } from './components/PinGate.jsx'
 import Stats from './components/Stats.jsx'
 import TreatmentRecords from './components/TreatmentRecords.jsx'
+import TestRecords from './components/TestRecords.jsx'
 import {
   cacheEntries,
+  cacheTestRecords,
   cacheTreatmentRecords,
   deleteEntry,
+  deleteTestRecord,
   deleteTreatmentRecord,
   DEFAULT_TREATMENT_RECORDS,
   exportEntriesAsJSON,
   loadCachedEntries,
+  loadCachedTestRecords,
   loadCachedTreatmentRecords,
   loadEntries,
+  loadTestRecords,
   loadTreatmentRecords,
   makeEmptyEntry,
   migrateLocalEntriesToCloud,
   saveEntry,
+  saveTestRecord,
   saveTreatmentRecord
 } from './utils/storage.js'
 
@@ -26,13 +32,15 @@ const TABS = [
   { id: 'new', label: 'Новая запись' },
   { id: 'history', label: 'История' },
   { id: 'stats', label: 'Статистика' },
-  { id: 'treatment', label: 'Лечение' }
+  { id: 'treatment', label: 'Лечение' },
+  { id: 'tests', label: 'Тесты' }
 ]
 
 export default function App() {
   const [isUnlocked, setIsUnlocked] = useState(() => hasSavedAccess())
   const [entries, setEntries] = useState([])
   const [treatmentRecords, setTreatmentRecords] = useState([])
+  const [testRecords, setTestRecords] = useState([])
   const [tab, setTab] = useState('new')
   const [draft, setDraft] = useState(() => makeEmptyEntry())
   const [selectedEntry, setSelectedEntry] = useState(null)
@@ -49,9 +57,10 @@ export default function App() {
       setIsLoading(true)
       setErrorMessage('')
       try {
-        const [cloudEntries, cloudTreatmentRecords] = await Promise.all([
+        const [cloudEntries, cloudTreatmentRecords, cloudTestRecords] = await Promise.all([
           loadEntries(),
-          loadTreatmentRecords()
+          loadTreatmentRecords(),
+          loadTestRecords()
         ])
         const migratedEntries = await migrateLocalEntriesToCloud(cloudEntries)
         const nextEntries = [...cloudEntries, ...migratedEntries]
@@ -65,6 +74,8 @@ export default function App() {
         }
         setTreatmentRecords(nextTreatmentRecords)
         cacheTreatmentRecords(nextTreatmentRecords)
+        setTestRecords(cloudTestRecords)
+        cacheTestRecords(cloudTestRecords)
         if (migratedEntries.length > 0) {
           setStatusMessage(`Перенесено в облако: ${migratedEntries.length} записей`)
         } else {
@@ -73,9 +84,11 @@ export default function App() {
       } catch (e) {
         const cachedEntries = loadCachedEntries()
         const cachedTreatmentRecords = loadCachedTreatmentRecords()
+        const cachedTestRecords = loadCachedTestRecords()
         if (cachedEntries.length > 0) {
           setEntries(cachedEntries)
           setTreatmentRecords(cachedTreatmentRecords)
+          setTestRecords(cachedTestRecords)
           setStatusMessage('Показаны записи из локального кэша. Когда интернет вернётся, дневник снова подключится к Supabase.')
           setErrorMessage(`Не удалось подключиться к Supabase: ${e.message}`)
         } else {
@@ -94,6 +107,7 @@ export default function App() {
     setIsUnlocked(false)
     setEntries([])
     setTreatmentRecords([])
+    setTestRecords([])
     setSelectedEntry(null)
     setEditingEntry(null)
     setStatusMessage('')
@@ -207,6 +221,51 @@ export default function App() {
     }
   }
 
+  const persistTestRecord = async (record) => {
+    setIsSaving(true)
+    setErrorMessage('')
+
+    try {
+      const savedRecord = await saveTestRecord(record)
+      setTestRecords((current) => {
+        const exists = current.some((item) => item.id === savedRecord.id)
+        const nextRecords = exists
+          ? current.map((item) => (item.id === savedRecord.id ? savedRecord : item))
+          : [...current, savedRecord]
+        cacheTestRecords(nextRecords)
+        return nextRecords
+      })
+      setStatusMessage('Тест сохранен в Supabase')
+      return savedRecord
+    } catch (e) {
+      setErrorMessage(`Не удалось сохранить тест: ${e.message}`)
+      return null
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDeleteTestRecord = async (id) => {
+    if (!confirm('Удалить этот тест?')) return
+
+    setIsSaving(true)
+    setErrorMessage('')
+
+    try {
+      await deleteTestRecord(id)
+      setTestRecords((current) => {
+        const nextRecords = current.filter((record) => record.id !== id)
+        cacheTestRecords(nextRecords)
+        return nextRecords
+      })
+      setStatusMessage('Тест удален из Supabase')
+    } catch (e) {
+      setErrorMessage(`Не удалось удалить тест: ${e.message}`)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     !isUnlocked ? (
       <PinGate onUnlock={() => setIsUnlocked(true)} />
@@ -302,6 +361,15 @@ export default function App() {
             records={treatmentRecords}
             onSave={persistTreatmentRecord}
             onDelete={handleDeleteTreatmentRecord}
+            isSaving={isSaving}
+          />
+        )}
+
+        {!isLoading && tab === 'tests' && (
+          <TestRecords
+            records={testRecords}
+            onSave={persistTestRecord}
+            onDelete={handleDeleteTestRecord}
             isSaving={isSaving}
           />
         )}

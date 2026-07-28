@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 const STORAGE_KEY = 'mood-diary-entries-v1'
 const CACHE_KEY = 'mood-diary-cloud-cache-v1'
 const TREATMENT_CACHE_KEY = 'mood-diary-treatment-cache-v1'
+const TEST_CACHE_KEY = 'mood-diary-test-cache-v1'
 const TABLE_NAME = 'diary_entries'
 
 function normalizeEntry(entry) {
@@ -38,6 +39,10 @@ function rowToEntry(row) {
 
 function isTreatmentRow(row) {
   return row.data?.recordType === 'treatment'
+}
+
+function isTestRow(row) {
+  return row.data?.recordType === 'test'
 }
 
 function normalizeTreatmentRecord(record) {
@@ -99,6 +104,44 @@ function rowToTreatmentRecord(row) {
   })
 }
 
+function normalizeTestRecord(record) {
+  return {
+    ...record,
+    id: record.id || crypto.randomUUID(),
+    recordType: 'test',
+    date: record.date || new Date().toISOString().slice(0, 10),
+    title: record.title || '',
+    result: record.result || '',
+    url: record.url || '',
+    notes: record.notes || '',
+    screenshot: record.screenshot || '',
+    screenshotName: record.screenshotName || '',
+    createdAt: record.createdAt || Date.now(),
+    updatedAt: Date.now()
+  }
+}
+
+function testRecordToRow(record) {
+  const normalized = normalizeTestRecord(record)
+
+  return {
+    id: normalized.id,
+    entry_date: normalized.date,
+    data: normalized
+  }
+}
+
+function rowToTestRecord(row) {
+  const data = row.data || {}
+
+  return normalizeTestRecord({
+    ...data,
+    id: row.id,
+    date: data.date || row.entry_date,
+    createdAt: data.createdAt || new Date(row.created_at).getTime()
+  })
+}
+
 function loadLocalEntries() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -137,6 +180,19 @@ export function loadCachedTreatmentRecords() {
   }
 }
 
+export function loadCachedTestRecords() {
+  try {
+    const raw = localStorage.getItem(TEST_CACHE_KEY)
+    if (!raw) return []
+
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.map(normalizeTestRecord) : []
+  } catch (e) {
+    console.error('Не удалось прочитать кэш тестов', e)
+    return []
+  }
+}
+
 export function cacheEntries(entries) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(entries.map(normalizeEntry)))
@@ -157,6 +213,16 @@ export function cacheTreatmentRecords(records) {
   }
 }
 
+export function cacheTestRecords(records) {
+  try {
+    localStorage.setItem(TEST_CACHE_KEY, JSON.stringify(records.map(normalizeTestRecord)))
+    return true
+  } catch (e) {
+    console.error('Не удалось обновить кэш тестов', e)
+    return false
+  }
+}
+
 export async function loadEntries() {
   const { data, error } = await supabase
     .from(TABLE_NAME)
@@ -168,7 +234,7 @@ export async function loadEntries() {
     throw new Error(error.message)
   }
 
-  return data.filter((row) => !isTreatmentRow(row)).map(rowToEntry)
+  return data.filter((row) => !isTreatmentRow(row) && !isTestRow(row)).map(rowToEntry)
 }
 
 export async function loadTreatmentRecords() {
@@ -183,6 +249,20 @@ export async function loadTreatmentRecords() {
   }
 
   return data.filter(isTreatmentRow).map(rowToTreatmentRecord)
+}
+
+export async function loadTestRecords() {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('id, entry_date, data, created_at')
+    .order('entry_date', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data.filter(isTestRow).map(rowToTestRecord)
 }
 
 export async function saveEntry(entry) {
@@ -215,6 +295,21 @@ export async function saveTreatmentRecord(record) {
   return rowToTreatmentRecord(data)
 }
 
+export async function saveTestRecord(record) {
+  const row = testRecordToRow(record)
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .upsert(row, { onConflict: 'id' })
+    .select('id, entry_date, data, created_at')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return rowToTestRecord(data)
+}
+
 export async function deleteEntry(id) {
   const { error } = await supabase
     .from(TABLE_NAME)
@@ -227,9 +322,14 @@ export async function deleteEntry(id) {
 }
 
 export const deleteTreatmentRecord = deleteEntry
+export const deleteTestRecord = deleteEntry
 
 export function makeEmptyTreatmentRecord() {
   return normalizeTreatmentRecord({})
+}
+
+export function makeEmptyTestRecord() {
+  return normalizeTestRecord({})
 }
 
 export const DEFAULT_TREATMENT_RECORDS = [
