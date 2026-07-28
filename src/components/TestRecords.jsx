@@ -149,6 +149,7 @@ function TestForm({ initialRecord, onSave, onCancel, isSaving }) {
 export default function TestRecords({ records, onSave, onDelete, isSaving }) {
   const [isAdding, setIsAdding] = useState(false)
   const [editingRecord, setEditingRecord] = useState(null)
+  const [openedScreenshot, setOpenedScreenshot] = useState(null)
   const sortedRecords = [...records].sort((a, b) => new Date(b.date) - new Date(a.date))
 
   const handleSave = async (record) => {
@@ -205,9 +206,12 @@ export default function TestRecords({ records, onSave, onDelete, isSaving }) {
                         </a>
                       )}
                       {record.screenshot && (
-                        <a href={record.screenshot} target="_blank" rel="noreferrer">
+                        <button
+                          type="button"
+                          onClick={() => setOpenedScreenshot(record)}
+                        >
                           Открыть скрин
-                        </a>
+                        </button>
                       )}
                     </div>
                   )}
@@ -224,6 +228,29 @@ export default function TestRecords({ records, onSave, onDelete, isSaving }) {
             ))}
           </ul>
         )
+      )}
+
+      {openedScreenshot && (
+        <div className="test-modal-backdrop" role="presentation" onClick={() => setOpenedScreenshot(null)}>
+          <div
+            className="test-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Скрин результата: ${openedScreenshot.title}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="test-modal-header">
+              <div>
+                <strong>{openedScreenshot.title}</strong>
+                <span>{formatDate(openedScreenshot.date)}</span>
+              </div>
+              <button type="button" className="treatment-delete" onClick={() => setOpenedScreenshot(null)} aria-label="Закрыть скрин">
+                ✕
+              </button>
+            </div>
+            <img src={openedScreenshot.screenshot} alt={`Скрин результата: ${openedScreenshot.title}`} />
+          </div>
+        </div>
       )}
     </div>
   )

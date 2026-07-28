@@ -1182,7 +1182,8 @@ button {
   margin-top: 8px;
 }
 
-.test-links a {
+.test-links a,
+.test-links button {
   display: inline-flex;
   align-items: center;
   min-height: 30px;
@@ -1191,8 +1192,10 @@ button {
   border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-sage-dark);
+  font-family: inherit;
   font-size: 0.82rem;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .test-actions {
@@ -1202,6 +1205,57 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.test-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(46, 42, 38, 0.45);
+}
+
+.test-modal {
+  width: min(100%, 860px);
+  max-height: min(92vh, 820px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: 0 20px 60px rgba(46, 42, 38, 0.24);
+}
+
+.test-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.test-modal-header strong {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.test-modal-header span {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+}
+
+.test-modal img {
+  max-width: 100%;
+  max-height: calc(92vh - 74px);
+  object-fit: contain;
+  background: var(--color-bg);
 }
 
 /* Stats */
