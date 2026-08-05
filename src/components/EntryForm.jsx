@@ -202,29 +202,36 @@ export default function EntryForm({ initialEntry, entries = [], onSave, onCancel
 
       <section className="form-section">
         <h3>Ресурс</h3>
+        <p className="section-hint">
+          5 — моя обычная норма до терапии. Всё выше 5 — ресурс выше привычного, это полезно отслеживать отдельно.
+        </p>
         <ScaleSlider
           label="Уровень энергии"
           value={entry.energy}
           onChange={(v) => update({ energy: v })}
           labels={SCALE_LABELS.energy}
+          max={10}
         />
         <ScaleSlider
           label="Работоспособность"
           value={entry.productivity}
           onChange={(v) => update({ productivity: v })}
           labels={SCALE_LABELS.productivity}
+          max={10}
         />
         <ScaleSlider
           label="Желание общаться"
           value={entry.social}
           onChange={(v) => update({ social: v })}
           labels={SCALE_LABELS.social}
+          max={10}
         />
         <ScaleSlider
           label="Желание активности"
           value={entry.activity}
           onChange={(v) => update({ activity: v })}
           labels={SCALE_LABELS.activity}
+          max={10}
         />
       </section>
 

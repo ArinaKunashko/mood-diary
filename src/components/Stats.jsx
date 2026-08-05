@@ -6,6 +6,7 @@ import {
   Cell,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -224,6 +225,27 @@ function SymptomCell({ color, date, weekday, tooltip }) {
   )
 }
 
+function ResourceChart({ title, data, dataKey, color }) {
+  return (
+    <>
+      <h3 style={{ marginTop: 28 }}>{title}</h3>
+      <p className="section-hint">Шкала 0–10: 5 — моя обычная норма до терапии, выше 5 — ресурс выше привычного.</p>
+      <div className="chart-wrap">
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={data} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+            <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12} />
+            <YAxis domain={[0, 10]} stroke="var(--color-text-soft)" fontSize={12} />
+            <ReferenceLine y={5} stroke="var(--color-border)" strokeDasharray="4 4" />
+            <Tooltip content={<PrettyTooltip />} />
+            <Line type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} dot={{ r: 3 }} connectNulls />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </>
+  )
+}
+
 function TextInsightList({ title, hint, items, emptyText, collapsible = false, defaultOpen = true }) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const totalCount = items.reduce((sum, item) => sum + item.count, 0)
@@ -384,6 +406,39 @@ export default function Stats({ entries, treatmentRecords = [] }) {
       weekday: date.shortWeekday,
       cycleLabel: cycleLabel(e),
       Энергия: e.energy
+    }
+  })
+
+  const productivityData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.shortWeekday,
+      cycleLabel: cycleLabel(e),
+      Работоспособность: e.productivity
+    }
+  })
+
+  const socialData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.shortWeekday,
+      cycleLabel: cycleLabel(e),
+      'Желание общаться': e.social
+    }
+  })
+
+  const activityData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.shortWeekday,
+      cycleLabel: cycleLabel(e),
+      'Желание активности': e.activity
     }
   })
 
@@ -580,19 +635,10 @@ export default function Stats({ entries, treatmentRecords = [] }) {
               </ResponsiveContainer>
             </div>
 
-            <h3 style={{marginTop: 28}}>Энергия</h3>
-            <p className="section-hint">Шкала 0–5: чем выше значение, тем больше ресурса.</p>
-            <div className="chart-wrap">
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={energyData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
-                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
-                  <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
-                  <Tooltip content={<PrettyTooltip/>}/>
-                  <Line type="monotone" dataKey="Энергия" stroke="#7C9885" strokeWidth={2} dot={{r: 3}} connectNulls/>
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <ResourceChart title="Энергия" data={energyData} dataKey="Энергия" color="#7C9885" />
+            <ResourceChart title="Работоспособность" data={productivityData} dataKey="Работоспособность" color="#D6A65F" />
+            <ResourceChart title="Желание общаться" data={socialData} dataKey="Желание общаться" color="#A08CB3" />
+            <ResourceChart title="Желание активности" data={activityData} dataKey="Желание активности" color="#D98B7A" />
 
             <h3 style={{marginTop: 28}}>Тревога</h3>
             <p className="section-hint">Шкала 0–5: чем выше значение, тем сильнее тревога.</p>

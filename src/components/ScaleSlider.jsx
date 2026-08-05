@@ -13,7 +13,7 @@ export default function ScaleSlider({ label, value, onChange, max = 5, labels })
           <button
             type="button"
             key={n}
-            className={`scale-dot ${value === n ? 'is-active' : ''}`}
+            className={`scale-dot ${value === n ? 'is-active' : ''} ${max === 10 && n === 5 ? 'is-baseline' : ''}`}
             onClick={() => onChange(n)}
             aria-pressed={value === n}
             aria-label={`${n}${labels && labels[n] ? ` — ${labels[n]}` : ''}`}

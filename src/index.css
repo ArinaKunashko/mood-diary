@@ -385,6 +385,11 @@ button {
 
 .scale-dot:hover { border-color: var(--color-sage); }
 
+.scale-dot.is-baseline {
+  border-color: var(--color-sage);
+  box-shadow: inset 0 0 0 2px rgba(124, 152, 133, 0.16);
+}
+
 .scale-dot.is-active {
   background: var(--color-sage);
   border-color: var(--color-sage);

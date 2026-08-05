@@ -47,10 +47,10 @@ export default function EntryDetail({ entry, onEdit, onClose }) {
       <Row label="Другие эмоции" value={entry.emotionOther} />
       <Row label="Сила эмоций" value={entry.intensity !== null ? `${entry.intensity}/5` : null} />
       <Row label="Тревога" value={entry.anxiety !== null ? `${entry.anxiety}/5` : null} />
-      <Row label="Энергия" value={entry.energy !== null ? `${entry.energy}/5` : null} />
-      <Row label="Работоспособность" value={entry.productivity !== null ? `${entry.productivity}/5` : null} />
-      <Row label="Желание общаться" value={entry.social !== null ? `${entry.social}/5` : null} />
-      <Row label="Желание активности" value={entry.activity !== null ? `${entry.activity}/5` : null} />
+      <Row label="Энергия" value={scoreLabel(entry.energy, 10)} />
+      <Row label="Работоспособность" value={scoreLabel(entry.productivity, 10)} />
+      <Row label="Желание общаться" value={scoreLabel(entry.social, 10)} />
+      <Row label="Желание активности" value={scoreLabel(entry.activity, 10)} />
       <Row label="Плач" value={entry.crying} />
       <Row label="Сон" value={entry.dreamQuality} />
       <Row label="Как быстро уснула" value={entry.sleepLatency} />
