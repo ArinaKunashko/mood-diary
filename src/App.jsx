@@ -29,11 +29,11 @@ import {
 } from './utils/storage.js'
 
 const TABS = [
-  { id: 'new', label: 'Новая запись' },
-  { id: 'history', label: 'История' },
-  { id: 'stats', label: 'Статистика' },
-  { id: 'treatment', label: 'Лечение' },
-  { id: 'tests', label: 'Тесты' }
+  { id: 'new', label: 'Новая запись', shortLabel: 'Запись', icon: '+' },
+  { id: 'history', label: 'История', shortLabel: 'История', icon: '≡' },
+  { id: 'stats', label: 'Статистика', shortLabel: 'Статы', icon: '⌁' },
+  { id: 'treatment', label: 'Лечение', shortLabel: 'Лечение', icon: '•' },
+  { id: 'tests', label: 'Тесты', shortLabel: 'Тесты', icon: '✓' }
 ]
 
 export default function App() {
@@ -266,6 +266,12 @@ export default function App() {
     }
   }
 
+  const switchTab = (nextTab) => {
+    setTab(nextTab)
+    setSelectedEntry(null)
+    setEditingEntry(null)
+  }
+
   return (
     !isUnlocked ? (
       <PinGate onUnlock={() => setIsUnlocked(true)} />
@@ -284,11 +290,7 @@ export default function App() {
               <button
                 key={t.id}
                 className={`tab ${tab === t.id ? 'is-active' : ''}`}
-                onClick={() => {
-                  setTab(t.id)
-                  setSelectedEntry(null)
-                  setEditingEntry(null)
-                }}
+                onClick={() => switchTab(t.id)}
               >
                 {t.label}
               </button>
@@ -374,6 +376,21 @@ export default function App() {
           />
         )}
       </main>
+
+      <nav className="mobile-tabbar" aria-label="Основная навигация">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={tab === t.id ? 'is-active' : ''}
+            onClick={() => switchTab(t.id)}
+            aria-label={t.label}
+          >
+            <span aria-hidden="true">{t.icon}</span>
+            <em>{t.shortLabel}</em>
+          </button>
+        ))}
+      </nav>
 
       <footer className="app-footer">
         <blockquote className="footer-quote">

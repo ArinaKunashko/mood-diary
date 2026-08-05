@@ -61,41 +61,24 @@ function addMonths(date, months) {
   return next
 }
 
-function startOfWeek(date) {
-  const next = new Date(date)
-  const day = next.getDay() || 7
-  next.setDate(next.getDate() - day + 1)
-  next.setHours(0, 0, 0, 0)
-  return next
+function inputDateValue(date) {
+  return date.toISOString().slice(0, 10)
 }
 
-function startOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
+function displayDate(date) {
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function periodRange(mode, anchorDate) {
-  if (mode === 'all') return null
-
-  if (mode === 'week') {
-    const start = startOfWeek(anchorDate)
-    return { start, end: addDays(start, 7) }
-  }
-
-  const start = startOfMonth(anchorDate)
-  return { start, end: addMonths(start, 1) }
+function displayInputDate(dateStr) {
+  return parseEntryDate(dateStr).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-function periodTitle(mode, anchorDate) {
-  if (mode === 'all') return 'Все записи'
+function rangeTitle(range) {
+  return `${displayDate(range.start)} — ${displayDate(addDays(range.end, -1))}`
+}
 
-  const range = periodRange(mode, anchorDate)
-  const start = range.start.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
-  const endDate = addDays(range.end, -1)
-  const end = endDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
-
-  if (mode === 'week') return `${start} — ${end}`
-
-  return range.start.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
+function sameDay(a, b) {
+  return inputDateValue(a) === inputDateValue(b)
 }
 
 function normalizeText(value) {
@@ -246,6 +229,66 @@ function ResourceChart({ title, data, dataKey, color }) {
   )
 }
 
+function CalendarDateField({ label, value, onChange }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [visibleMonth, setVisibleMonth] = useState(() => new Date(parseEntryDate(value).getFullYear(), parseEntryDate(value).getMonth(), 1))
+  const selectedDate = parseEntryDate(value)
+  const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1)
+  const calendarStart = addDays(monthStart, -((monthStart.getDay() || 7) - 1))
+  const days = Array.from({ length: 42 }, (_, index) => addDays(calendarStart, index))
+  const today = new Date()
+
+  const selectDate = (date) => {
+    onChange(inputDateValue(date))
+    setVisibleMonth(new Date(date.getFullYear(), date.getMonth(), 1))
+    setIsOpen(false)
+  }
+
+  return (
+    <div className="date-picker-field">
+      <span>{label}</span>
+      <button type="button" className="date-picker-button" onClick={() => setIsOpen((current) => !current)}>
+        <strong>{displayInputDate(value)}</strong>
+        <i aria-hidden="true">⌄</i>
+      </button>
+
+      {isOpen && (
+        <div className="date-picker-popover">
+          <div className="date-picker-header">
+            <button type="button" onClick={() => setVisibleMonth((current) => addMonths(current, -1))} aria-label="Предыдущий месяц">
+              ‹
+            </button>
+            <strong>{visibleMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}</strong>
+            <button type="button" onClick={() => setVisibleMonth((current) => addMonths(current, 1))} aria-label="Следующий месяц">
+              ›
+            </button>
+          </div>
+
+          <div className="date-picker-weekdays">
+            {['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map((day) => <span key={day}>{day}</span>)}
+          </div>
+
+          <div className="date-picker-days">
+            {days.map((day) => {
+              const isOutside = day.getMonth() !== visibleMonth.getMonth()
+              return (
+                <button
+                  key={inputDateValue(day)}
+                  type="button"
+                  className={`${isOutside ? 'is-outside' : ''} ${sameDay(day, selectedDate) ? 'is-selected' : ''} ${sameDay(day, today) ? 'is-today' : ''}`}
+                  onClick={() => selectDate(day)}
+                >
+                  {day.getDate()}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TextInsightList({ title, hint, items, emptyText, collapsible = false, defaultOpen = true }) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const totalCount = items.reduce((sum, item) => sum + item.count, 0)
@@ -351,8 +394,9 @@ export default function Stats({ entries, treatmentRecords = [] }) {
   const latestEntryDate = entries.length
     ? parseEntryDate([...entries].sort((a, b) => parseEntryDate(a.date) - parseEntryDate(b.date)).at(-1).date)
     : new Date()
-  const [periodMode, setPeriodMode] = useState('month')
-  const [periodAnchor, setPeriodAnchor] = useState(latestEntryDate)
+  const [activePreset, setActivePreset] = useState('month')
+  const [customStart, setCustomStart] = useState(() => inputDateValue(addMonths(latestEntryDate, -1)))
+  const [customEnd, setCustomEnd] = useState(() => inputDateValue(latestEntryDate))
 
   if (entries.length === 0) {
     return (
@@ -363,7 +407,11 @@ export default function Stats({ entries, treatmentRecords = [] }) {
     )
   }
 
-  const range = periodRange(periodMode, periodAnchor)
+  const customStartDate = parseEntryDate(customStart)
+  const customEndDate = parseEntryDate(customEnd)
+  const range = customStartDate <= customEndDate
+    ? { start: customStartDate, end: addDays(customEndDate, 1) }
+    : { start: customEndDate, end: addDays(customStartDate, 1) }
   const sortedEntries = [...entries]
     .sort((a, b) => parseEntryDate(a.date) - parseEntryDate(b.date))
     .filter((entry) => {
@@ -372,19 +420,12 @@ export default function Stats({ entries, treatmentRecords = [] }) {
       return entryDate >= range.start && entryDate < range.end
     })
 
-  const goToPreviousPeriod = () => {
-    if (periodMode === 'all') return
-    setPeriodAnchor((current) => periodMode === 'week' ? addDays(current, -7) : addMonths(current, -1))
-  }
-
-  const goToNextPeriod = () => {
-    if (periodMode === 'all') return
-    setPeriodAnchor((current) => periodMode === 'week' ? addDays(current, 7) : addMonths(current, 1))
-  }
-
-  const handleModeChange = (mode) => {
-    setPeriodMode(mode)
-    if (mode !== 'all') setPeriodAnchor(latestEntryDate)
+  const applyPreset = (preset) => {
+    setActivePreset(preset)
+    setCustomEnd(inputDateValue(latestEntryDate))
+    if (preset === 'week') setCustomStart(inputDateValue(addDays(latestEntryDate, -6)))
+    if (preset === 'month') setCustomStart(inputDateValue(addMonths(latestEntryDate, -1)))
+    if (preset === 'three-months') setCustomStart(inputDateValue(addMonths(latestEntryDate, -3)))
   }
 
   const anxietyData = sortedEntries.map((e) => {
@@ -520,248 +561,268 @@ export default function Stats({ entries, treatmentRecords = [] }) {
   const needsStats = aggregateNeedsEntries(sortedEntries)
 
   return (
-    <div className="stats-block">
-      <div className="stats-navigation">
-        <div className="stats-period-switch" aria-label="Период статистики">
-          {[
-            { id: 'week', label: 'Неделя' },
-            { id: 'month', label: 'Месяц' },
-            { id: 'all', label: 'Всё' }
-          ].map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              className={periodMode === mode.id ? 'is-active' : ''}
-              onClick={() => handleModeChange(mode.id)}
-            >
-              {mode.label}
-            </button>
-          ))}
-        </div>
-        <div className="stats-period-controls">
-          <button type="button" onClick={goToPreviousPeriod} disabled={periodMode === 'all'} aria-label="Предыдущий период">
-            ‹
-          </button>
-          <span>{periodTitle(periodMode, periodAnchor)}</span>
-          <button type="button" onClick={goToNextPeriod} disabled={periodMode === 'all'} aria-label="Следующий период">
-            ›
-          </button>
-        </div>
-      </div>
+      <div className="stats-block">
 
-      <TreatmentSummary records={treatmentRecords} />
+        <TreatmentSummary records={treatmentRecords}/>
 
-      {sortedEntries.length === 0 && (
-        <div className="empty-state stats-empty-period">
-          <p>В этом периоде пока нет записей.</p>
-          <p className="empty-state-sub">Переключи неделю или месяц, чтобы посмотреть другие дни.</p>
-        </div>
-      )}
-
-      {sortedEntries.length > 0 && (
-          <>
-            <h3 style={{marginTop: 8}}>Сон</h3>
-            <p className="section-hint">
-              Цветная лента показывает ощущение сна по дням. Сюжет сна остаётся в подсказке.
-            </p>
-            <div className="symptom-strip">
-              {dreamData.map((entry, index) => {
-                const level = entry['Тревожность сна']
-                const background =
-                    level === 0
-                      ? DREAM_COLORS.calm
-                      : level === 0.5
-                        ? DREAM_COLORS.uneasy
-                        : level === 1
-                          ? DREAM_COLORS.anxious
-                          : DREAM_COLORS.unknown
-                return (
-                    <SymptomCell
-                        key={`${entry.date}-${index}`}
-                        color={background}
-                        date={entry.date}
-                        weekday={entry.weekday}
-                        tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}${entry.dreamContent ? `: ${entry.dreamContent}` : ''}`}
-                    />
-                )
-              })}
-            </div>
-            <div className="symptom-legend">
-              <span><i style={{background: DREAM_COLORS.calm}}/>Не тревожный сон</span>
-              <span><i style={{background: DREAM_COLORS.uneasy}}/>Беспокойный сон</span>
-              <span><i style={{background: DREAM_COLORS.anxious}}/>Тревожный сон</span>
-              <span><i style={{background: DREAM_COLORS.unknown}}/>Не помню</span>
+        <div className="stats-range-picker">
+          <div className="stats-range-top">
+            <div className="stats-range-summary">
+              <span>Период статистики</span>
+              <strong>{rangeTitle(range)}</strong>
             </div>
 
-
-            <h3 style={{marginTop: 28}}>Засыпание</h3>
-            <p className="section-hint">
-              Лента показывает, насколько быстро получилось уснуть.
-            </p>
-            <div className="symptom-strip">
-              {sleepLatencyData.map((entry, index) => {
-                const background = entry.level === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[entry.level]
-                return (
-                    <SymptomCell
-                        key={`${entry.date}-${index}`}
-                        color={background}
-                        date={entry.date}
-                        weekday={entry.weekday}
-                        tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
-                    />
-                )
-              })}
-            </div>
-            <div className="symptom-legend">
-              {SLEEP_LATENCY_OPTIONS.map((label) => (
-                  <span key={label}>
-            <i style={{background: SLEEP_LATENCY_LEVEL[label] === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[SLEEP_LATENCY_LEVEL[label]]}}/>
-                    {label}
-          </span>
-              ))}
-            </div>
-
-            <h3 style={{marginTop: 28}}>Часы сна</h3>
-            <p className="section-hint">Сколько часов получилось поспать ночью накануне.</p>
-            <div className="chart-wrap">
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={sleepHoursData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
-                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
-                  <YAxis domain={[0, 12]} stroke="var(--color-text-soft)" fontSize={12}/>
-                  <Tooltip content={<PrettyTooltip/>}/>
-                  <Line type="monotone" dataKey="Часы сна" stroke="#D98B7A" strokeWidth={2} dot={{r: 3}} connectNulls/>
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            <ResourceChart title="Энергия" data={energyData} dataKey="Энергия" color="#7C9885" />
-            <ResourceChart title="Работоспособность" data={productivityData} dataKey="Работоспособность" color="#D6A65F" />
-            <ResourceChart title="Желание общаться" data={socialData} dataKey="Желание общаться" color="#A08CB3" />
-            <ResourceChart title="Желание активности" data={activityData} dataKey="Желание активности" color="#D98B7A" />
-
-            <h3 style={{marginTop: 28}}>Тревога</h3>
-            <p className="section-hint">Шкала 0–5: чем выше значение, тем сильнее тревога.</p>
-            <div className="chart-wrap">
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={anxietyData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
-                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
-                  <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
-                  <Tooltip content={<PrettyTooltip/>}/>
-                  <Line type="monotone" dataKey="Тревога" stroke="#A08CB3" strokeWidth={2} dot={{r: 3}} connectNulls/>
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            <h3 style={{marginTop: 28}}>Настроение</h3>
-            <p className="section-hint">
-              Шкала 0–5: две линии показывают общий фон утром и вечером.
-            </p>
-            <div className="chart-wrap">
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={moodData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
-                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
-                  <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
-                  <Tooltip content={<PrettyTooltip/>}/>
-                  <Line type="monotone" dataKey="Утро" stroke="#D6A65F" strokeWidth={2} dot={{r: 3}} connectNulls/>
-                  <Line type="monotone" dataKey="Вечер" stroke="#7C9885" strokeWidth={2} dot={{r: 3}} connectNulls/>
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-
-            <h3 style={{marginTop: 28}}>Покраснение лица</h3>
-            <p className="section-hint">
-              Лента показывает степень и характер покраснения по дням: от светлого “не краснело” до насыщенного
-              “краснело, зудело и болело”.
-            </p>
-            <div className="symptom-strip">
-              {faceRednessData.map((entry, index) => {
-                const level = entry['Покраснение лица']
-                const background = level === null ? '#F0EDE6' : FACE_REDNESS_COLORS[level]
-                return (
-                    <SymptomCell
-                        key={`${entry.date}-${index}`}
-                        color={background}
-                        date={entry.date}
-                        weekday={entry.weekday}
-                        tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
-                    />
-                )
-              })}
-            </div>
-            <div className="symptom-legend">
+            <div className="stats-range-presets" aria-label="Быстрый выбор периода">
               {[
-                'Не краснело',
-                'Немного краснело',
-                'Краснело сильно',
-                'Краснело и зудело',
-                'Краснело и болело',
-                'Краснело, зудело и болело'
-              ].map((label) => (
-                  <span key={label}>
+                {id: 'week', label: '7 дней'},
+                {id: 'month', label: '30 дней'},
+                {id: 'three-months', label: '3 месяца'}
+              ].map((preset) => (
+                  <button
+                      key={preset.id}
+                      type="button"
+                      className={activePreset === preset.id ? 'is-active' : ''}
+                      onClick={() => applyPreset(preset.id)}
+                  >
+                    {preset.label}
+                  </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="stats-range-fields">
+            <CalendarDateField
+                value={customStart}
+                onChange={(nextDate) => {
+                  setActivePreset('custom')
+                  setCustomStart(nextDate)
+                }}
+            />
+            <CalendarDateField
+                value={customEnd}
+                onChange={(nextDate) => {
+                  setActivePreset('custom')
+                  setCustomEnd(nextDate)
+                }}
+            />
+          </div>
+        </div>
+
+        {sortedEntries.length === 0 && (
+            <div className="empty-state stats-empty-period">
+              <p>В этом периоде пока нет записей.</p>
+              <p className="empty-state-sub">Переключи неделю или месяц, чтобы посмотреть другие дни.</p>
+            </div>
+        )}
+
+        {sortedEntries.length > 0 && (
+            <>
+              <h3 style={{marginTop: 8}}>Сон</h3>
+              <p className="section-hint">
+                Цветная лента показывает ощущение сна по дням. Сюжет сна остаётся в подсказке.
+              </p>
+              <div className="symptom-strip">
+                {dreamData.map((entry, index) => {
+                  const level = entry['Тревожность сна']
+                  const background =
+                      level === 0
+                          ? DREAM_COLORS.calm
+                          : level === 0.5
+                              ? DREAM_COLORS.uneasy
+                              : level === 1
+                                  ? DREAM_COLORS.anxious
+                                  : DREAM_COLORS.unknown
+                  return (
+                      <SymptomCell
+                          key={`${entry.date}-${index}`}
+                          color={background}
+                          date={entry.date}
+                          weekday={entry.weekday}
+                          tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}${entry.dreamContent ? `: ${entry.dreamContent}` : ''}`}
+                      />
+                  )
+                })}
+              </div>
+              <div className="symptom-legend">
+                <span><i style={{background: DREAM_COLORS.calm}}/>Не тревожный сон</span>
+                <span><i style={{background: DREAM_COLORS.uneasy}}/>Беспокойный сон</span>
+                <span><i style={{background: DREAM_COLORS.anxious}}/>Тревожный сон</span>
+                <span><i style={{background: DREAM_COLORS.unknown}}/>Не помню</span>
+              </div>
+
+
+              <h3 style={{marginTop: 28}}>Засыпание</h3>
+              <p className="section-hint">
+                Лента показывает, насколько быстро получилось уснуть.
+              </p>
+              <div className="symptom-strip">
+                {sleepLatencyData.map((entry, index) => {
+                  const background = entry.level === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[entry.level]
+                  return (
+                      <SymptomCell
+                          key={`${entry.date}-${index}`}
+                          color={background}
+                          date={entry.date}
+                          weekday={entry.weekday}
+                          tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
+                      />
+                  )
+                })}
+              </div>
+              <div className="symptom-legend">
+                {SLEEP_LATENCY_OPTIONS.map((label) => (
+                    <span key={label}>
+            <i style={{background: SLEEP_LATENCY_LEVEL[label] === null ? '#F0EDE6' : SLEEP_LATENCY_COLORS[SLEEP_LATENCY_LEVEL[label]]}}/>
+                      {label}
+          </span>
+                ))}
+              </div>
+
+              <h3 style={{marginTop: 28}}>Часы сна</h3>
+              <p className="section-hint">Сколько часов получилось поспать ночью накануне.</p>
+              <div className="chart-wrap">
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={sleepHoursData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                    <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                    <YAxis domain={[0, 12]} stroke="var(--color-text-soft)" fontSize={12}/>
+                    <Tooltip content={<PrettyTooltip/>}/>
+                    <Line type="monotone" dataKey="Часы сна" stroke="#D98B7A" strokeWidth={2} dot={{r: 3}}
+                          connectNulls/>
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <ResourceChart title="Энергия" data={energyData} dataKey="Энергия" color="#7C9885"/>
+              <ResourceChart title="Работоспособность" data={productivityData} dataKey="Работоспособность"
+                             color="#D6A65F"/>
+              <ResourceChart title="Желание общаться" data={socialData} dataKey="Желание общаться" color="#A08CB3"/>
+              <ResourceChart title="Желание активности" data={activityData} dataKey="Желание активности"
+                             color="#D98B7A"/>
+
+              <h3 style={{marginTop: 28}}>Тревога</h3>
+              <p className="section-hint">Шкала 0–5: чем выше значение, тем сильнее тревога.</p>
+              <div className="chart-wrap">
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={anxietyData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                    <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                    <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
+                    <Tooltip content={<PrettyTooltip/>}/>
+                    <Line type="monotone" dataKey="Тревога" stroke="#A08CB3" strokeWidth={2} dot={{r: 3}} connectNulls/>
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <h3 style={{marginTop: 28}}>Настроение</h3>
+              <p className="section-hint">
+                Шкала 0–5: две линии показывают общий фон утром и вечером.
+              </p>
+              <div className="chart-wrap">
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={moodData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                    <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                    <YAxis domain={[0, 5]} stroke="var(--color-text-soft)" fontSize={12}/>
+                    <Tooltip content={<PrettyTooltip/>}/>
+                    <Line type="monotone" dataKey="Утро" stroke="#D6A65F" strokeWidth={2} dot={{r: 3}} connectNulls/>
+                    <Line type="monotone" dataKey="Вечер" stroke="#7C9885" strokeWidth={2} dot={{r: 3}} connectNulls/>
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+
+              <h3 style={{marginTop: 28}}>Покраснение лица</h3>
+              <p className="section-hint">
+                Лента показывает степень и характер покраснения по дням: от светлого “не краснело” до насыщенного
+                “краснело, зудело и болело”.
+              </p>
+              <div className="symptom-strip">
+                {faceRednessData.map((entry, index) => {
+                  const level = entry['Покраснение лица']
+                  const background = level === null ? '#F0EDE6' : FACE_REDNESS_COLORS[level]
+                  return (
+                      <SymptomCell
+                          key={`${entry.date}-${index}`}
+                          color={background}
+                          date={entry.date}
+                          weekday={entry.weekday}
+                          tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
+                      />
+                  )
+                })}
+              </div>
+              <div className="symptom-legend">
+                {[
+                  'Не краснело',
+                  'Немного краснело',
+                  'Краснело сильно',
+                  'Краснело и зудело',
+                  'Краснело и болело',
+                  'Краснело, зудело и болело'
+                ].map((label) => (
+                    <span key={label}>
             <i style={{background: FACE_REDNESS_COLORS[FACE_REDNESS_LEVEL[label]]}}/>
-                    {label}
+                      {label}
           </span>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <h3 style={{marginTop: 28}}>Плач по дням</h3>
-            <p className="section-hint">
-              0 — не плакала, 1 — хотелось плакать, 2 — немного, 3 — долго, 4 — не могла остановиться.
-            </p>
-            <div className="chart-wrap">
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={cryingData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
-                  <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
-                  <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} stroke="var(--color-text-soft)" fontSize={12}/>
-                  <Tooltip content={<PrettyTooltip type="description"/>} cursor={{fill: 'rgba(124, 152, 133, 0.08)'}}/>
-                  <Bar dataKey="Плач" radius={[6, 6, 0, 0]} minPointSize={4}>
-                    {cryingData.map((entry, index) => (
-                        <Cell key={`${entry.date}-${index}`} fill={entry.color}/>
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="symptom-legend">
-              {['Не плакала', 'Хотелось плакать', 'Немного плакала', 'Долго плакала', 'Не могла остановиться'].map((label) => (
-                  <span key={label}>
+              <h3 style={{marginTop: 28}}>Плач по дням</h3>
+              <p className="section-hint">
+                0 — не плакала, 1 — хотелось плакать, 2 — немного, 3 — долго, 4 — не могла остановиться.
+              </p>
+              <div className="chart-wrap">
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={cryingData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                    <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                    <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} stroke="var(--color-text-soft)" fontSize={12}/>
+                    <Tooltip content={<PrettyTooltip type="description"/>}
+                             cursor={{fill: 'rgba(124, 152, 133, 0.08)'}}/>
+                    <Bar dataKey="Плач" radius={[6, 6, 0, 0]} minPointSize={4}>
+                      {cryingData.map((entry, index) => (
+                          <Cell key={`${entry.date}-${index}`} fill={entry.color}/>
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="symptom-legend">
+                {['Не плакала', 'Хотелось плакать', 'Немного плакала', 'Долго плакала', 'Не могла остановиться'].map((label) => (
+                    <span key={label}>
             <i style={{background: CRYING_COLORS[CRYING_LEVEL[label]]}}/>
-                    {label}
+                      {label}
           </span>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <TextInsightList
-                title="Возможные причины покраснения"
-                hint="Повторяющиеся ответы из поля «С чем я это связываю?»."
-                items={faceRednessReasonStats}
-                emptyText="Пока нет заполненных причин покраснения."
-            />
+              <TextInsightList
+                  title="Возможные причины покраснения"
+                  hint="Повторяющиеся ответы из поля «С чем я это связываю?»."
+                  items={faceRednessReasonStats}
+                  emptyText="Пока нет заполненных причин покраснения."
+              />
 
-            <TextInsightList
-                title="Что помогло хотя бы на 1%"
-                hint="Повторяющиеся ответы из обращения к себе."
-                items={helpedOnePercentStats}
-                emptyText="Пока нет заполненных ответов про то, что помогло."
-                collapsible
-                defaultOpen={false}
-            />
+              <TextInsightList
+                  title="Что помогло хотя бы на 1%"
+                  hint="Повторяющиеся ответы из обращения к себе."
+                  items={helpedOnePercentStats}
+                  emptyText="Пока нет заполненных ответов про то, что помогло."
+                  collapsible
+                  defaultOpen={false}
+              />
 
-            <TextInsightList
-                title="Что сейчас нужнее всего"
-                hint="Повторяющиеся потребности, которые можно обсудить и отследить."
-                items={needsStats}
-                emptyText="Пока нет заполненных ответов про потребности."
-                collapsible
-                defaultOpen={false}
-            />
-          </>
-      )}
-    </div>
+              <TextInsightList
+                  title="Что сейчас нужнее всего"
+                  hint="Повторяющиеся потребности, которые можно обсудить и отследить."
+                  items={needsStats}
+                  emptyText="Пока нет заполненных ответов про потребности."
+                  collapsible
+                  defaultOpen={false}
+              />
+            </>
+        )}
+      </div>
   )
 }
