@@ -62,7 +62,10 @@ function addMonths(date, months) {
 }
 
 function inputDateValue(date) {
-  return date.toISOString().slice(0, 10)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function displayDate(date) {
@@ -543,6 +546,17 @@ export default function Stats({ entries, treatmentRecords = [] }) {
     }
   })
 
+  const sleepWakeupsData = sortedEntries.map((e) => {
+    const date = dateInfo(e.date)
+    return {
+      date: date.shortDate,
+      dateLabel: date.fullLabel,
+      weekday: date.shortWeekday,
+      cycleLabel: cycleLabel(e),
+      'Пробуждения': numberOrNull(e.sleepWakeups)
+    }
+  })
+
   const cryingData = sortedEntries.map((e) => {
     const date = dateInfo(e.date)
     return {
@@ -690,6 +704,20 @@ export default function Stats({ entries, treatmentRecords = [] }) {
                     <Line type="monotone" dataKey="Часы сна" stroke="#D98B7A" strokeWidth={2} dot={{r: 3}}
                           connectNulls/>
                   </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <h3 style={{marginTop: 28}}>Ночные пробуждения</h3>
+              <p className="section-hint">Сколько раз просыпалась за ночь. Полезно отслеживать после изменения лекарств или режима сна.</p>
+              <div className="chart-wrap">
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={sleepWakeupsData} margin={{top: 10, right: 20, left: -10, bottom: 0}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+                    <XAxis dataKey="date" stroke="var(--color-text-soft)" fontSize={12}/>
+                    <YAxis domain={[0, 'dataMax']} allowDecimals={false} stroke="var(--color-text-soft)" fontSize={12}/>
+                    <Tooltip content={<PrettyTooltip/>} cursor={{fill: 'rgba(160, 140, 179, 0.08)'}}/>
+                    <Bar dataKey="Пробуждения" fill="#A08CB3" radius={[6, 6, 0, 0]} minPointSize={4}/>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
 

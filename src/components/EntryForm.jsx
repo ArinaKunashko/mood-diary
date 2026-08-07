@@ -149,6 +149,20 @@ export default function EntryForm({ initialEntry, entries = [], onSave, onCancel
             onChange={(e) => update({ sleepHours: e.target.value })}
           />
         </label>
+        <label className="stacked-field sleep-hours-field">
+          Сколько раз просыпалась ночью?
+          <input
+            type="number"
+            min="0"
+            max="20"
+            step="1"
+            inputMode="numeric"
+            className="text-input"
+            placeholder="например, 3"
+            value={entry.sleepWakeups ?? ''}
+            onChange={(e) => update({ sleepWakeups: e.target.value })}
+          />
+        </label>
         <textarea
           className="text-area other-input"
           rows={2}
