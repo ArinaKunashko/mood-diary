@@ -197,18 +197,27 @@ function PrettyTooltip({ active, payload, label, type }) {
   )
 }
 
-function SymptomCell({ color, date, weekday, tooltip }) {
+function SymptomCell({ color, date, weekday, tooltip, onSelect }) {
   return (
     <div className="symptom-day">
-      <div
+      <button
+        type="button"
         className="symptom-cell has-tooltip"
         style={{ background: color }}
         data-tooltip={tooltip}
+        aria-label={tooltip}
+        onClick={onSelect}
       />
       <span>{date}</span>
       {weekday && <small>{weekday}</small>}
     </div>
   )
+}
+
+function MobileSymptomTip({ text }) {
+  if (!text) return null
+
+  return <div className="mobile-symptom-tip">{text}</div>
 }
 
 function ResourceChart({ title, data, dataKey, color }) {
@@ -400,6 +409,7 @@ export default function Stats({ entries, treatmentRecords = [] }) {
   const [activePreset, setActivePreset] = useState('month')
   const [customStart, setCustomStart] = useState(() => inputDateValue(addMonths(latestEntryDate, -1)))
   const [customEnd, setCustomEnd] = useState(() => inputDateValue(latestEntryDate))
+  const [activeSymptomTip, setActiveSymptomTip] = useState(null)
 
   if (entries.length === 0) {
     return (
@@ -653,10 +663,15 @@ export default function Stats({ entries, treatmentRecords = [] }) {
                           date={entry.date}
                           weekday={entry.weekday}
                           tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}${entry.dreamContent ? `: ${entry.dreamContent}` : ''}`}
+                          onSelect={() => setActiveSymptomTip({
+                            section: 'dream',
+                            text: `${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}${entry.dreamContent ? `: ${entry.dreamContent}` : ''}`
+                          })}
                       />
                   )
                 })}
               </div>
+              <MobileSymptomTip text={activeSymptomTip?.section === 'dream' ? activeSymptomTip.text : ''} />
               <div className="symptom-legend">
                 <span><i style={{background: DREAM_COLORS.calm}}/>Не тревожный сон</span>
                 <span><i style={{background: DREAM_COLORS.uneasy}}/>Беспокойный сон</span>
@@ -679,10 +694,15 @@ export default function Stats({ entries, treatmentRecords = [] }) {
                           date={entry.date}
                           weekday={entry.weekday}
                           tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
+                          onSelect={() => setActiveSymptomTip({
+                            section: 'latency',
+                            text: `${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`
+                          })}
                       />
                   )
                 })}
               </div>
+              <MobileSymptomTip text={activeSymptomTip?.section === 'latency' ? activeSymptomTip.text : ''} />
               <div className="symptom-legend">
                 {SLEEP_LATENCY_OPTIONS.map((label) => (
                     <span key={label}>
@@ -776,10 +796,15 @@ export default function Stats({ entries, treatmentRecords = [] }) {
                           date={entry.date}
                           weekday={entry.weekday}
                           tooltip={`${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`}
+                          onSelect={() => setActiveSymptomTip({
+                            section: 'face',
+                            text: `${entry.dateLabel}, ${entry.cycleLabel} — ${entry.description}`
+                          })}
                       />
                   )
                 })}
               </div>
+              <MobileSymptomTip text={activeSymptomTip?.section === 'face' ? activeSymptomTip.text : ''} />
               <div className="symptom-legend">
                 {[
                   'Не краснело',

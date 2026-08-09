@@ -66,7 +66,7 @@ function TreatmentForm({ initialRecord, onSave, onCancel, isSaving }) {
   return (
     <form className="treatment-form" onSubmit={handleSubmit}>
       <div className="treatment-form-grid">
-        <label className="stacked-field">
+        <label className="stacked-field treatment-date-field">
           Дата
           <input
             className="text-input"

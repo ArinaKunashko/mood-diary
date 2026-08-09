@@ -1757,8 +1757,12 @@ button {
   height: 30px;
   border: 1px solid var(--color-border);
   border-radius: 7px;
+  padding: 0;
   cursor: default;
   transition: transform 0.15s ease, border-color 0.15s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  touch-action: manipulation;
 }
 
 .symptom-cell:hover {
@@ -1785,6 +1789,10 @@ button {
   text-align: center;
   white-space: nowrap;
   opacity: 0.78;
+}
+
+.mobile-symptom-tip {
+  display: none;
 }
 
 .text-insight-block {
@@ -1945,6 +1953,14 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .treatment-date-field {
+    padding-right: 10px;
+  }
+
+  .treatment-date-field .text-input {
+    padding-right: 38px;
+  }
+
   .stats-range-top { align-items: flex-start; flex-direction: column; }
   .stats-range-presets { width: 100%; }
   .stats-range-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
@@ -2100,22 +2116,33 @@ button {
     right: auto;
   }
   .has-tooltip::after {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: calc(92px + env(safe-area-inset-bottom));
-    z-index: 40;
-    width: auto;
-    max-width: none;
-    padding: 10px 12px;
-    text-align: left;
-    transform: translateY(6px);
-    white-space: normal;
-    overflow-wrap: anywhere;
+    content: none;
   }
   .has-tooltip:hover::after,
   .has-tooltip:focus-visible::after {
-    transform: translateY(0);
+    opacity: 0;
+  }
+  .symptom-cell:hover {
+    border-color: var(--color-border);
+    transform: none;
+  }
+  .symptom-cell:focus-visible {
+    outline: 2px solid rgba(124, 152, 133, 0.5);
+    outline-offset: 3px;
+  }
+  .mobile-symptom-tip {
+    display: block;
+    width: 100%;
+    margin: 12px 0 2px;
+    padding: 11px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 8px 24px rgba(46, 42, 38, 0.1);
+    color: var(--color-text);
+    font-size: 0.82rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
   }
   .text-insight-heading { align-items: flex-start; flex-direction: column; }
   .text-insight-toggle { width: 100%; justify-content: space-between; }
