@@ -813,6 +813,19 @@ button {
   max-width: 100%;
 }
 
+.treatment-date-field input[type="date"] {
+  display: block;
+  width: 100%;
+  inline-size: 100%;
+  min-width: 0;
+  min-inline-size: 0;
+  max-width: 100%;
+  max-inline-size: 100%;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .treatment-kind-tabs {
   display: inline-flex;
   width: 100%;
@@ -1954,11 +1967,12 @@ button {
   }
 
   .treatment-date-field {
-    padding-right: 10px;
+    width: 100%;
+    min-width: 0;
   }
 
-  .treatment-date-field .text-input {
-    padding-right: 38px;
+  .treatment-date-field input[type="date"] {
+    padding-right: 12px;
   }
 
   .stats-range-top { align-items: flex-start; flex-direction: column; }
