@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ScaleSlider from './ScaleSlider.jsx'
 import MultiSelect from './MultiSelect.jsx'
 import {
@@ -21,7 +21,7 @@ function parseDate(date) {
   return new Date(`${date}T00:00:00`)
 }
 
-function getCycleHint(entries, currentEntry) {
+function getCycleSuggestion(entries, currentEntry) {
   if (!currentEntry.date) return null
 
   const currentDate = parseDate(currentEntry.date)
@@ -37,14 +37,28 @@ function getCycleHint(entries, currentEntry) {
   const daysDiff = Math.max(1, Math.round((currentDate - parseDate(previousEntry.date)) / 86400000))
   const suggestedDay = previousCycleDay + daysDiff
 
-  return `В прошлой записи был ${previousCycleDay} день. Сейчас примерно ${suggestedDay}.`
+  return {
+    value: String(suggestedDay),
+    hint: `Заполнила автоматически: в прошлой записи был ${previousCycleDay} день, сейчас примерно ${suggestedDay}.`
+  }
 }
 
 export default function EntryForm({ initialEntry, entries = [], onSave, onCancel, isSaving = false }) {
   const [entry, setEntry] = useState(initialEntry)
-  const cycleHint = getCycleHint(entries, entry)
+  const [isCycleAutoFilled, setIsCycleAutoFilled] = useState(false)
+  const cycleSuggestion = getCycleSuggestion(entries, entry)
+  const cycleHint = cycleSuggestion?.hint
 
   const update = (patch) => setEntry((prev) => ({ ...prev, ...patch }))
+
+  useEffect(() => {
+    if (!cycleSuggestion) return
+    if (entry.cycleDay && !isCycleAutoFilled) return
+    if (entry.cycleDay === cycleSuggestion.value) return
+
+    setEntry((current) => ({ ...current, cycleDay: cycleSuggestion.value }))
+    setIsCycleAutoFilled(true)
+  }, [cycleSuggestion?.value, entry.cycleDay, isCycleAutoFilled])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -83,7 +97,10 @@ export default function EntryForm({ initialEntry, entries = [], onSave, onCancel
             max="60"
             inputMode="numeric"
             value={entry.cycleDay ?? ''}
-            onChange={(e) => update({ cycleDay: e.target.value })}
+            onChange={(e) => {
+              setIsCycleAutoFilled(false)
+              update({ cycleDay: e.target.value })
+            }}
           />
         </label>
       </div>
