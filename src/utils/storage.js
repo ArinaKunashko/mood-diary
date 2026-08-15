@@ -46,7 +46,7 @@ function isTestRow(row) {
 }
 
 function normalizeTreatmentRecord(record) {
-  const kind = record.kind === 'medication' ? 'psychiatrist' : record.kind || 'psychiatrist'
+  const kind = record.kind || 'psychiatrist'
   const notesList = Array.isArray(record.notesList)
     ? record.notesList
     : String(record.notes || '').trim()
@@ -62,19 +62,44 @@ function normalizeTreatmentRecord(record) {
     : record.medication || record.dosage
       ? [{ name: record.medication || '', dosage: record.dosage || '' }]
       : []
+  const medicationPeriods = Array.isArray(record.medicationPeriods) && record.medicationPeriods.length > 0
+    ? record.medicationPeriods
+        .map((period) => ({
+          id: period.id || crypto.randomUUID(),
+          status: period.status || period.medicationStatus || 'taking',
+          startDate: period.startDate || period.date || record.date || new Date().toISOString().slice(0, 10),
+          endDate: period.endDate || '',
+          dosage: String(period.dosage || '').trim(),
+          notes: String(period.notes || '').trim()
+        }))
+        .filter((period) => period.startDate)
+    : kind === 'medication'
+      ? [{
+          id: crypto.randomUUID(),
+          status: record.medicationStatus || 'taking',
+          startDate: record.date || new Date().toISOString().slice(0, 10),
+          endDate: record.endDate || '',
+          dosage: String(record.dosage || '').trim(),
+          notes: String(record.notes || '').trim()
+        }]
+      : []
+  const firstMedicationPeriod = medicationPeriods[0]
 
   return {
     ...record,
     id: record.id || crypto.randomUUID(),
     recordType: 'treatment',
-    date: record.date || new Date().toISOString().slice(0, 10),
+    date: kind === 'medication' && firstMedicationPeriod ? firstMedicationPeriod.startDate : record.date || new Date().toISOString().slice(0, 10),
     kind,
     title: record.title || '',
     specialist: record.specialist || '',
-    medication: medications[0]?.name || '',
-    dosage: medications[0]?.dosage || '',
-    medications,
-    notes: record.notes || '',
+    medication: kind === 'medication' ? String(record.medication || '').trim() : medications[0]?.name || '',
+    dosage: kind === 'medication' ? String(record.dosage || '').trim() : medications[0]?.dosage || '',
+    medications: kind === 'medication' ? [] : medications,
+    medicationPeriods,
+    medicationStatus: firstMedicationPeriod?.status || record.medicationStatus || 'taking',
+    endDate: firstMedicationPeriod?.endDate || record.endDate || '',
+    notes: kind === 'medication' ? record.notes || firstMedicationPeriod?.notes || '' : record.notes || '',
     notesList,
     followUp: record.followUp || '',
     planned: Boolean(record.planned),

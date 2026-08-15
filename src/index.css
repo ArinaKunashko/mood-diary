@@ -855,6 +855,33 @@ button {
   box-shadow: 0 1px 4px rgba(46, 42, 38, 0.08);
 }
 
+.treatment-status-tabs {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+}
+
+.treatment-status-tabs button {
+  min-width: 104px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-text-soft);
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.treatment-status-tabs button.is-active {
+  background: var(--color-surface);
+  color: var(--color-sage-dark);
+  box-shadow: 0 1px 4px rgba(46, 42, 38, 0.08);
+}
+
 .treatment-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -887,6 +914,45 @@ button {
   grid-template-columns: minmax(0, 1fr) minmax(92px, 0.45fr) 34px;
   gap: 8px;
   align-items: center;
+}
+
+.treatment-medication-period-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.medication-period-form-list {
+  display: grid;
+  gap: 10px;
+}
+
+.medication-period-form {
+  position: relative;
+  padding: 12px;
+  border: 1px solid #D6E3D8;
+  border-radius: 12px;
+  background: #F7FAF7;
+}
+
+.medication-period-form.is-break {
+  border-color: #E7D4CC;
+  background: #FFF7F4;
+}
+
+.medication-period-form .treatment-status-tabs {
+  margin-bottom: 10px;
+}
+
+.medication-period-remove {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.medication-period-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .treatment-points {
@@ -1046,6 +1112,172 @@ button {
   color: var(--color-sage-dark);
   font-size: 0.8rem;
   font-weight: 500;
+}
+
+.treatment-period-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid #D6E3D8;
+  border-radius: 10px;
+  background: #EEF4EE;
+}
+
+.treatment-period-card strong {
+  color: var(--color-sage-dark);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.treatment-period-card span {
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+}
+
+.medication-groups {
+  display: grid;
+  gap: 14px;
+}
+
+.medication-group {
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg);
+}
+
+.medication-group-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.medication-group-header .treatment-actions {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.medication-group-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.medication-group-header p {
+  margin: 5px 0 0;
+  color: var(--color-sage-dark);
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.medication-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.medication-timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.medication-timeline li + li {
+  margin-top: 10px;
+}
+
+.medication-timeline li::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 18px;
+  bottom: -14px;
+  width: 1px;
+  background: var(--color-border);
+}
+
+.medication-timeline li:last-child::before {
+  display: none;
+}
+
+.medication-timeline-marker {
+  width: 10px;
+  height: 10px;
+  margin-top: 15px;
+  border: 2px solid #D6E3D8;
+  border-radius: 50%;
+  background: var(--color-sage);
+}
+
+.medication-timeline li.is-break .medication-timeline-marker {
+  border-color: #E7D4CC;
+  background: var(--color-terracotta);
+}
+
+.medication-timeline-card {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #D6E3D8;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.medication-timeline li.is-break .medication-timeline-card {
+  border-color: #E7D4CC;
+  background: #FFF7F4;
+}
+
+.medication-timeline-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.medication-timeline-top span {
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.medication-timeline-top .treatment-actions {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.medication-timeline-top .treatment-delete {
+  flex: 0 0 auto;
+  margin-top: -3px;
+}
+
+.medication-timeline-card strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-sage-dark);
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
+.medication-timeline li.is-break .medication-timeline-card strong {
+  color: var(--color-terracotta);
+}
+
+.medication-timeline-card p {
+  margin: 6px 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.treatment-form input:disabled {
+  opacity: 0.64;
+  cursor: not-allowed;
 }
 
 .treatment-followup {
@@ -1966,6 +2198,10 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .treatment-medication-period-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .treatment-date-field {
     width: 100%;
     min-width: 0;
@@ -2166,6 +2402,7 @@ button {
   .test-header { flex-direction: column; }
   .treatment-summary { grid-template-columns: 1fr; }
   .treatment-medication-row { grid-template-columns: 1fr 1fr 34px; }
+  .treatment-medication-period-grid { grid-template-columns: 1fr; }
   .test-screenshot-preview { grid-template-columns: 1fr; }
   .scale-dot { width: 34px; height: 34px; font-size: 0.85rem; }
 }

@@ -353,6 +353,21 @@ function formatTreatmentDate(dateStr) {
 }
 
 function medicationLabel(record) {
+  if (!record) return ''
+
+  if (record.kind === 'medication') {
+    const activePeriod = record.activeMedicationPeriod
+    if (activePeriod) {
+      if (activePeriod.status === 'break') return `${record.medication} · перерыв`
+
+      return [record.medication, activePeriod.dosage].filter(Boolean).join(' · ')
+    }
+
+    if (record.medicationStatus === 'break') return `${record.medication} · перерыв`
+
+    return [record.medication, record.dosage].filter(Boolean).join(' · ')
+  }
+
   const medications = Array.isArray(record.medications) && record.medications.length > 0
     ? record.medications
     : record.medication || record.dosage
@@ -365,6 +380,42 @@ function medicationLabel(record) {
     .join(', ')
 }
 
+function medicationPeriodsFromRecord(record) {
+  if (Array.isArray(record.medicationPeriods) && record.medicationPeriods.length > 0) {
+    return record.medicationPeriods.map((period) => ({
+      status: period.status || 'taking',
+      startDate: period.startDate || record.date,
+      endDate: period.endDate || '',
+      dosage: period.dosage || '',
+      notes: period.notes || ''
+    }))
+  }
+
+  return [{
+    status: record.medicationStatus || 'taking',
+    startDate: record.date,
+    endDate: record.endDate || '',
+    dosage: record.dosage || '',
+    notes: record.notes || ''
+  }]
+}
+
+function activeMedicationRecord(record, today) {
+  if (record.kind !== 'medication' || !record.medication) return null
+
+  const activePeriod = medicationPeriodsFromRecord(record)
+    .filter((period) => {
+      if (period.status === 'break') return false
+      const startDate = new Date(`${period.startDate}T00:00:00`)
+      const endDate = period.endDate ? new Date(`${period.endDate}T23:59:59`) : null
+
+      return startDate <= today && (!endDate || endDate >= today)
+    })
+    .at(-1)
+
+  return activePeriod ? { ...record, activeMedicationPeriod: activePeriod } : null
+}
+
 function TreatmentSummary({ records }) {
   if (!records || records.length === 0) return null
 
@@ -372,16 +423,20 @@ function TreatmentSummary({ records }) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const medicationRecords = sortedRecords.filter((record) => medicationLabel(record) && new Date(`${record.date}T00:00:00`) <= today)
+  const activeMedicationPeriods = sortedRecords.map((record) => activeMedicationRecord(record, today)).filter(Boolean)
+  const medicationRecords = sortedRecords.filter((record) => record.kind !== 'medication' && medicationLabel(record) && new Date(`${record.date}T00:00:00`) <= today)
   const currentMedication = medicationRecords.at(-1)
   const nextAppointment = sortedRecords.find((record) => record.kind === 'psychiatrist' && record.planned && new Date(`${record.date}T00:00:00`) >= today)
+  const currentMedicationLabel = activeMedicationPeriods.length > 0
+    ? activeMedicationPeriods.map(medicationLabel).join(', ')
+    : medicationLabel(currentMedication)
 
   return (
     <div className="treatment-summary">
       <div className="treatment-summary-main">
         <span>Лечение</span>
-        {currentMedication ? (
-          <strong>{medicationLabel(currentMedication)}</strong>
+        {currentMedicationLabel ? (
+          <strong>{currentMedicationLabel}</strong>
         ) : (
           <strong>Данные о лекарствах не указаны</strong>
         )}
@@ -390,11 +445,16 @@ function TreatmentSummary({ records }) {
         )}
       </div>
       <div className="treatment-summary-timeline">
-        {sortedRecords.filter((record) => record.kind === 'psychiatrist').slice(-5).map((record) => (
+        {sortedRecords.filter((record) => record.kind === 'psychiatrist' || record.kind === 'medication').slice(-5).map((record) => (
           <div key={record.id} className={record.planned ? 'is-planned' : ''}>
             <span>{formatTreatmentDate(record.date)}</span>
             <strong>{record.title}</strong>
-            {medicationLabel(record) && <em>{medicationLabel(record)}</em>}
+            {medicationLabel(record) && (
+              <em>
+                {medicationLabel(record)}
+                {record.kind === 'medication' && (record.endDate ? ` до ${formatTreatmentDate(record.endDate)}` : ' сейчас')}
+              </em>
+            )}
           </div>
         ))}
       </div>
