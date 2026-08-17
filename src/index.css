@@ -473,6 +473,10 @@ button {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 11px 22px;
   border-radius: 10px;
   border: 1px solid transparent;
@@ -502,6 +506,25 @@ button {
 .btn-small {
   padding: 6px 14px;
   font-size: 0.85rem;
+}
+
+.btn-with-loader {
+  min-width: 164px;
+}
+
+.btn-loader {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: btn-loader-spin 0.75s linear infinite;
+}
+
+@keyframes btn-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* History / list */
@@ -1309,8 +1332,7 @@ button {
 }
 
 .treatment-summary {
-  display: grid;
-  grid-template-columns: minmax(190px, 0.8fr) minmax(0, 1.2fr);
+  display: flex;
   gap: 16px;
   margin-bottom: 24px;
   padding: 14px;

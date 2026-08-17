@@ -409,8 +409,9 @@ export default function EntryForm({ initialEntry, entries = [], onSave, onCancel
                     Отмена
                 </button>
             )}
-            <button type="submit" className="btn btn-primary" disabled={isSaving}>
-                {isSaving ? 'Сохраняю...' : 'Сохранить запись'}
+            <button type="submit" className="btn btn-primary btn-with-loader" disabled={isSaving}>
+                {isSaving && <span className="btn-loader" aria-hidden="true" />}
+                <span>Сохранить запись</span>
             </button>
         </div>
     </form>

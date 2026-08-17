@@ -416,10 +416,24 @@ function activeMedicationRecord(record, today) {
   return activePeriod ? { ...record, activeMedicationPeriod: activePeriod } : null
 }
 
+function medicationTimelineLabel(record) {
+  if (record.kind !== 'medication') return ''
+
+  const periods = medicationPeriodsFromRecord(record)
+  if (periods.length === 0) return medicationLabel(record)
+
+  const latestPeriod = [...periods].sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).at(-1)
+  if (!latestPeriod) return medicationLabel(record)
+  if (latestPeriod.status === 'break') return `${record.medication} · перерыв`
+
+  return [record.medication, latestPeriod.dosage].filter(Boolean).join(' · ')
+}
+
 function TreatmentSummary({ records }) {
   if (!records || records.length === 0) return null
 
   const sortedRecords = [...records].sort((a, b) => new Date(a.date) - new Date(b.date))
+  const hasMedicationCards = sortedRecords.some((record) => record.kind === 'medication')
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -441,22 +455,8 @@ function TreatmentSummary({ records }) {
           <strong>Данные о лекарствах не указаны</strong>
         )}
         {nextAppointment && (
-          <em>Следующий прием: {formatTreatmentDate(nextAppointment.date)}</em>
+          <em>Следующий прием у Евгения Александровича: {formatTreatmentDate(nextAppointment.date)}</em>
         )}
-      </div>
-      <div className="treatment-summary-timeline">
-        {sortedRecords.filter((record) => record.kind === 'psychiatrist' || record.kind === 'medication').slice(-5).map((record) => (
-          <div key={record.id} className={record.planned ? 'is-planned' : ''}>
-            <span>{formatTreatmentDate(record.date)}</span>
-            <strong>{record.title}</strong>
-            {medicationLabel(record) && (
-              <em>
-                {medicationLabel(record)}
-                {record.kind === 'medication' && (record.endDate ? ` до ${formatTreatmentDate(record.endDate)}` : ' сейчас')}
-              </em>
-            )}
-          </div>
-        ))}
       </div>
     </div>
   )
